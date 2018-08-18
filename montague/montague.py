@@ -15,4 +15,9 @@ if __name__ == '__main__':
             print()
             break
 
-        print(parse_formula(formula))
+        try:
+            tree = parse_formula(formula)
+        except RuntimeError as e:
+            print('Error:', e)
+        else:
+            print(tree)
