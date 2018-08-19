@@ -103,10 +103,17 @@ class ParseTest(unittest.TestCase):
     def test_parsing_precedence(self):
         tree = parse_formula('x & y | z')
         self.assertIsInstance(tree, OrNode)
-        left = tree.left
-        self.assertIsInstance(left, AndNode)
-        self.assertEqual(left.left.value, 'x')
-        self.assertEqual(left.right.value, 'y')
-        right = tree.right
-        self.assertIsInstance(right, VarNode)
-        self.assertEqual(right.value, 'z')
+        self.assertIsInstance(tree.left, AndNode)
+        self.assertEqual(tree.left.left.value, 'x')
+        self.assertEqual(tree.left.right.value, 'y')
+        self.assertIsInstance(tree.right, VarNode)
+        self.assertEqual(tree.right.value, 'z')
+
+    def test_parsing_precedence2(self):
+        tree = parse_formula('x | y & z')
+        self.assertIsInstance(tree, OrNode)
+        self.assertIsInstance(tree.left, VarNode)
+        self.assertEqual(tree.left.value, 'x')
+        self.assertIsInstance(tree.right, AndNode)
+        self.assertEqual(tree.right.left.value, 'y')
+        self.assertEqual(tree.right.right.value, 'z')
