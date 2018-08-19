@@ -68,6 +68,15 @@ class TokenizeTest(unittest.TestCase):
         self.assertEqual(tokens[2].typ, 'SYMBOL')
         self.assertEqual(tokens[2].value, 'b')
 
+    def test_tokenize_brackets(self):
+        tokens = list(tokenize('[a]'))
+        self.assertEqual(len(tokens), 3)
+
+        self.assertEqual(tokens[0].typ, 'LBRACKET')
+        self.assertEqual(tokens[0].value, '[')
+        self.assertEqual(tokens[2].typ, 'RBRACKET')
+        self.assertEqual(tokens[2].value, ']')
+
 
 class ParseTest(unittest.TestCase):
     def test_parsing_symbol(self):
@@ -100,6 +109,16 @@ class ParseTest(unittest.TestCase):
         self.assertIsInstance(right, VarNode)
         self.assertEqual(right.value, "b0")
 
+    def test_missing_operand(self):
+        with self.assertRaises(RuntimeError):
+            parse_formula('a | ')
+        with self.assertRaises(RuntimeError):
+            parse_formula('b & ')
+        with self.assertRaises(RuntimeError):
+            parse_formula('| a')
+        with self.assertRaises(RuntimeError):
+            parse_formula('& b')
+
     def test_parsing_precedence(self):
         tree = parse_formula('x & y | z')
         self.assertIsInstance(tree, OrNode)
@@ -117,3 +136,16 @@ class ParseTest(unittest.TestCase):
         self.assertIsInstance(tree.right, AndNode)
         self.assertEqual(tree.right.left.value, 'y')
         self.assertEqual(tree.right.right.value, 'z')
+
+    def test_parsing_brackets(self):
+        tree = parse_formula('[x | y] & z')
+        self.assertIsInstance(tree, AndNode)
+        self.assertIsInstance(tree.left, OrNode)
+        self.assertEqual(tree.left.left.value, 'x')
+        self.assertEqual(tree.left.right.value, 'y')
+        self.assertIsInstance(tree.right, VarNode)
+        self.assertEqual(tree.right.value, 'z')
+
+    def test_parsing_hanging_bracket(self):
+        with self.assertRaises(RuntimeError):
+            parse_formula('[x | y')

@@ -4,7 +4,7 @@ Grammar for formulas:
 
     formula := e
 
-    e := e AND e | e OR e | ID
+    e := e AND e | e OR e | ID | [ e ]
 
     AND := the symbol "&"
     OR  := the symbol "|"
@@ -37,6 +37,7 @@ def parse_formula(formula):
       e      := term { OR term }
       term   := factor { AND factor }
       factor := ID
+              | [ e ]
 
     For the definition of the tokens, see the _TOKENS global variable in this
     module.
@@ -93,6 +94,13 @@ def match_factor(tz):
     tkn = next(tz)
     if tkn.typ == 'SYMBOL':
         return VarNode(tkn.value)
+    elif tkn.typ == 'LBRACKET':
+        e = match_e(tz)
+        tkn = next(tz)
+        if tkn.typ == 'RBRACKET':
+            return e
+        else:
+            raise RuntimeError(f'expected ], got {tkn.value}, line {tkn.line}')
     else:
         raise RuntimeError(f'expected symbol, got {tkn.value}, line {tkn.line}')
 
@@ -102,6 +110,8 @@ _TOKENS = [
     ('SYMBOL', r"[A-Za-z][A-Za-z0-9_'-]*"),
     ('AND', r'&'),
     ('OR', r'\|'),
+    ('LBRACKET', r'\['),
+    ('RBRACKET', r'\]'),
     ('NEWLINE', r'\n'),
     ('SKIP', r'\s+'),
     ('MISMATCH', r'.'),
