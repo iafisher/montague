@@ -3,6 +3,8 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: August 2018
 """
+import readline
+
 from .parsing import parse_formula
 
 
