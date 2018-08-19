@@ -1,7 +1,8 @@
 import unittest
 
 from montague.parsing import (
-    AndNode, IteratorWithMemory, OrNode, VarNode, parse_formula, tokenize,
+    AndNode, IteratorWithMemory, LambdaNode, OrNode, VarNode, parse_formula,
+    tokenize,
 )
 
 
@@ -77,6 +78,25 @@ class TokenizeTest(unittest.TestCase):
         self.assertEqual(tokens[2].typ, 'RBRACKET')
         self.assertEqual(tokens[2].value, ']')
 
+    def test_tokenize_lambda_op(self):
+        tokens = list(tokenize('L'))
+        self.assertEqual(len(tokens), 1)
+        self.assertEqual(tokens[0].typ, 'LAMBDA')
+        self.assertEqual(tokens[0].value, 'L')
+
+    def test_tokenize_lambda(self):
+        tokens = list(tokenize('Lx.x'))
+        self.assertEqual(len(tokens), 4)
+
+        self.assertEqual(tokens[0].typ, 'LAMBDA')
+        self.assertEqual(tokens[0].value, 'L')
+        self.assertEqual(tokens[1].typ, 'SYMBOL')
+        self.assertEqual(tokens[1].value, 'x')
+        self.assertEqual(tokens[2].typ, 'DOT')
+        self.assertEqual(tokens[2].value, '.')
+        self.assertEqual(tokens[3].typ, 'SYMBOL')
+        self.assertEqual(tokens[3].value, 'x')
+
 
 class ParseTest(unittest.TestCase):
     def test_parsing_symbol(self):
@@ -109,16 +129,6 @@ class ParseTest(unittest.TestCase):
         self.assertIsInstance(right, VarNode)
         self.assertEqual(right.value, "b0")
 
-    def test_missing_operand(self):
-        with self.assertRaises(RuntimeError):
-            parse_formula('a | ')
-        with self.assertRaises(RuntimeError):
-            parse_formula('b & ')
-        with self.assertRaises(RuntimeError):
-            parse_formula('| a')
-        with self.assertRaises(RuntimeError):
-            parse_formula('& b')
-
     def test_parsing_precedence(self):
         tree = parse_formula('x & y | z')
         self.assertIsInstance(tree, OrNode)
@@ -146,6 +156,32 @@ class ParseTest(unittest.TestCase):
         self.assertIsInstance(tree.right, VarNode)
         self.assertEqual(tree.right.value, 'z')
 
+    def test_parsing_lambda(self):
+        tree = parse_formula('Lx.Ly.[x & y]')
+        self.assertIsInstance(tree, LambdaNode)
+        self.assertEqual(tree.parameter.value, 'x')
+        self.assertIsInstance(tree.body, LambdaNode)
+        self.assertEqual(tree.body.parameter.value, 'y')
+        self.assertIsInstance(tree.body.body, AndNode)
+        self.assertEqual(tree.body.body.left.value, 'x')
+        self.assertEqual(tree.body.body.right.value, 'y')
+
+
+class ParseErrorTest(unittest.TestCase):
+    def test_missing_operand(self):
+        with self.assertRaises(RuntimeError):
+            parse_formula('a | ')
+        with self.assertRaises(RuntimeError):
+            parse_formula('b & ')
+        with self.assertRaises(RuntimeError):
+            parse_formula('| a')
+        with self.assertRaises(RuntimeError):
+            parse_formula('& b')
+
     def test_parsing_hanging_bracket(self):
         with self.assertRaises(RuntimeError):
             parse_formula('[x | y')
+
+    def test_lambda_missing_body(self):
+        with self.assertRaises(RuntimeError):
+            parse_formula('Lx.')

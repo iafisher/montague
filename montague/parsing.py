@@ -3,13 +3,21 @@
 Grammar for formulas:
 
     formula := e
+             | lambda
 
-    e := e AND e | e OR e | ID | [ e ]
+    e := e AND e
+       | e OR e
+       | SYMBOL
+       | [ e ]
+       | lambda
 
-    AND := the symbol "&"
-    OR  := the symbol "|"
-    ID  := a letter followed by zero or more letters, digits, underscores,
-           hyphens, and apostrophes
+    lambda := LAMBDA SYMBOL DOT e
+
+    AND     := the symbol "&"
+    OR      := the symbol "|"
+    SYMBOL  := a letter followed by zero or more letters, digits, underscores,
+               hyphens, and apostrophes. "L" is not a valid symbol as it already
+               stands for the lambda operator.
 
 AND binds more tightly than OR.
 
@@ -24,20 +32,25 @@ from collections import namedtuple
 VarNode = namedtuple('VarNode', 'value')
 AndNode = namedtuple('AndNode', ['left', 'right'])
 OrNode = namedtuple('OrNode', ['left', 'right'])
+LambdaNode = namedtuple('LambdaNode', ['parameter', 'body'])
 
 
 def parse_formula(formula):
     """Parse the formula into a tree. Returns an object of one of the Node
     classes. The grammar below is the grammar that the recursive-descent parser
-    actually implements. It is equivalent to, though more difficult to read,
-    than the grammar in the module docstring.
+    actually implements. It is equivalent to, though more difficult to read
+    than, the grammar in the module docstring.
 
       formula := e
+               | lambda
 
       e      := term { OR term }
+              | lambda
       term   := factor { AND factor }
-      factor := ID
-              | [ e ]
+      factor := SYMBOL
+              | LBRACKET e RBRACKET
+
+      lambda := LAMBDA SYMBOL DOT e
 
     For the definition of the tokens, see the _TOKENS global variable in this
     module.
@@ -58,19 +71,39 @@ def parse_formula(formula):
 
 
 def match_e(tz):
-    """  e := term { OR term }  """
-    left_term = match_term(tz)
-    try:
-        tkn = next(tz)
-    except StopIteration:
-        return left_term
+    """  e := term { OR term } | lambda  """
+    tkn = next(tz)
+    tz.push(tkn)
+    if tkn.typ == 'LAMBDA':
+        return match_lambda(tz)
     else:
-        if tkn.typ == 'OR':
-            right_term = match_term(tz)
-            return OrNode(left_term, right_term)
-        else:
-            tz.push(tkn)
+        left_term = match_term(tz)
+        try:
+            tkn = next(tz)
+        except StopIteration:
             return left_term
+        else:
+            if tkn.typ == 'OR':
+                right_term = match_term(tz)
+                return OrNode(left_term, right_term)
+            else:
+                tz.push(tkn)
+                return left_term
+
+
+def match_lambda(tz):
+    tkn = next(tz)
+    if tkn.typ != 'LAMBDA':
+        raise RuntimeError(f'expected L, got {tkn.value}, line {tkn.line}')
+    tkn = next(tz)
+    if tkn.typ != 'SYMBOL':
+        raise RuntimeError(f'expected symbol, got {tkn.value}, line {tkn.line}')
+    parameter = VarNode(tkn.value)
+    tkn = next(tz)
+    if tkn.typ != 'DOT':
+        raise RuntimeError(f'expected ., got {tkn.value}, line {tkn.line}')
+    body = match_e(tz)
+    return LambdaNode(parameter, body)
 
 
 def match_term(tz):
@@ -107,11 +140,13 @@ def match_factor(tz):
 
 Token = namedtuple('Token', ['typ', 'value', 'line', 'column'])
 _TOKENS = [
+    ('LAMBDA', r'L'),
     ('SYMBOL', r"[A-Za-z][A-Za-z0-9_'-]*"),
     ('AND', r'&'),
     ('OR', r'\|'),
     ('LBRACKET', r'\['),
     ('RBRACKET', r'\]'),
+    ('DOT', r'\.'),
     ('NEWLINE', r'\n'),
     ('SKIP', r'\s+'),
     ('MISMATCH', r'.'),
