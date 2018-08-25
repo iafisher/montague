@@ -1,8 +1,8 @@
 import unittest
 
 from montague.parsing import (
-    AndNode, IteratorWithMemory, LambdaNode, OrNode, VarNode, parse_formula,
-    tokenize,
+    AndNode, CallNode, IteratorWithMemory, LambdaNode, OrNode, VarNode,
+    parse_formula, tokenize,
 )
 
 
@@ -97,6 +97,24 @@ class TokenizeTest(unittest.TestCase):
         self.assertEqual(tokens[3].typ, 'SYMBOL')
         self.assertEqual(tokens[3].value, 'x')
 
+    def test_tokenize_parentheses(self):
+        tokens = list(tokenize('()'))
+        self.assertEqual(len(tokens), 2)
+
+        self.assertEqual(tokens[0].typ, 'LPAREN')
+        self.assertEqual(tokens[0].value, '(')
+        self.assertEqual(tokens[1].typ, 'RPAREN')
+        self.assertEqual(tokens[1].value, ')')
+
+    def test_tokenize_comma(self):
+        tokens = list(tokenize('a,b'))
+        self.assertEqual(len(tokens), 3)
+
+        self.assertEqual(tokens[0].typ, 'SYMBOL')
+        self.assertEqual(tokens[2].typ, 'SYMBOL')
+        self.assertEqual(tokens[1].typ, 'COMMA')
+        self.assertEqual(tokens[1].value, ',')
+
 
 class ParseTest(unittest.TestCase):
     def test_parsing_symbol(self):
@@ -165,6 +183,28 @@ class ParseTest(unittest.TestCase):
         self.assertIsInstance(tree.body.body, AndNode)
         self.assertEqual(tree.body.body.left.value, 'x')
         self.assertEqual(tree.body.body.right.value, 'y')
+
+    def test_parsing_call(self):
+        tree = parse_formula('Happy(x)')
+        self.assertIsInstance(tree, CallNode)
+        self.assertEqual(tree.symbol.value, 'Happy')
+        self.assertEqual(len(tree.args), 1)
+        self.assertEqual(tree.args[0].value, 'x')
+
+    def test_parsing_call_with_no_args(self):
+        tree = parse_formula('Happy()')
+        self.assertIsInstance(tree, CallNode)
+        self.assertEqual(tree.symbol.value, 'Happy')
+        self.assertEqual(len(tree.args), 0)
+
+    def test_parsing_call_with_several_args(self):
+        tree = parse_formula('Between(x, y & z, [Capital(france)])')
+        self.assertIsInstance(tree, CallNode)
+        self.assertEqual(tree.symbol.value, 'Between')
+        self.assertEqual(len(tree.args), 3)
+        self.assertIsInstance(tree.args[0], VarNode)
+        self.assertIsInstance(tree.args[1], AndNode)
+        self.assertIsInstance(tree.args[2], CallNode)
 
 
 class ParseErrorTest(unittest.TestCase):

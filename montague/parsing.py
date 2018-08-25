@@ -10,8 +10,13 @@ Grammar for formulas:
        | SYMBOL
        | [ e ]
        | lambda
+       | call
 
     lambda := LAMBDA SYMBOL DOT e
+
+    call    := SYMBOL LPAREN [ arglist ] RPAREN
+    arglist := arglist COMMA e
+             | e
 
     AND     := the symbol "&"
     OR      := the symbol "|"
@@ -33,6 +38,7 @@ VarNode = namedtuple('VarNode', 'value')
 AndNode = namedtuple('AndNode', ['left', 'right'])
 OrNode = namedtuple('OrNode', ['left', 'right'])
 LambdaNode = namedtuple('LambdaNode', ['parameter', 'body'])
+CallNode = namedtuple('CallNode', ['symbol', 'args'])
 
 
 def parse_formula(formula):
@@ -44,13 +50,21 @@ def parse_formula(formula):
       formula := e
                | lambda
 
-      e      := term { OR term }
-              | lambda
-      term   := factor { AND factor }
-      factor := SYMBOL
-              | LBRACKET e RBRACKET
+      e := term { OR term }
+         | lambda
 
       lambda := LAMBDA SYMBOL DOT e
+
+      term   := factor { AND factor }
+      factor := SYMBOL call-postfix
+              | LBRACKET e RBRACKET
+              | call
+
+      call-postfix := LPAREN [ arglist ] RPAREN
+                    | <nothing>
+
+      arglist := arglist COMMA e
+               | e
 
     For the definition of the tokens, see the _TOKENS global variable in this
     module.
@@ -63,15 +77,15 @@ def parse_formula(formula):
 
     # Make sure there are no trailing tokens in the formula.
     try:
-        next(tz)
+        tkn = next(tz)
     except StopIteration:
         return tree
     else:
-        raise RuntimeError('trailing tokens in formula') from None
+        raise RuntimeError(f'trailing tokens in formula, line {tkn.line} column'
+            ' {tkn.column}') from None
 
 
 def match_e(tz):
-    """  e := term { OR term } | lambda  """
     tkn = next(tz)
     tz.push(tkn)
     if tkn.typ == 'LAMBDA':
@@ -106,8 +120,41 @@ def match_lambda(tz):
     return LambdaNode(parameter, body)
 
 
+def match_symbol_postfix(tz):
+    try:
+        tkn = next(tz)
+    except StopIteration:
+        return None
+    if tkn.typ != 'LPAREN':
+        tz.push(tkn)
+        return None
+    args = match_arglist(tz)
+    tkn = next(tz)
+    if tkn.typ != 'RPAREN':
+        raise RuntimeError(f'expected ), got {tkn.value}, line {tkn.line}')
+    return args
+
+
+def match_arglist(tz):
+    args = []
+    while True:
+        tkn = next(tz)
+        tz.push(tkn)
+        if tkn.typ == 'RPAREN':
+            return args
+        e = match_e(tz)
+        args.append(e)
+        tkn = next(tz)
+        if tkn.typ == 'RPAREN':
+            tz.push(tkn)
+            return args
+        elif tkn.typ == 'COMMA':
+            continue
+        else:
+            raise RuntimeError(f'expected , or ), got {tkn.value}, line {tkn.line}')
+
+
 def match_term(tz):
-    """  term := factor { AND factor }  """
     left_factor = match_factor(tz)
     try:
         tkn = next(tz)
@@ -123,10 +170,13 @@ def match_term(tz):
 
 
 def match_factor(tz):
-    """  factor := SYMBOL  """
     tkn = next(tz)
     if tkn.typ == 'SYMBOL':
-        return VarNode(tkn.value)
+        postfix = match_symbol_postfix(tz)
+        if postfix is None:
+            return VarNode(tkn.value)
+        else:
+            return CallNode(VarNode(tkn.value), postfix)
     elif tkn.typ == 'LBRACKET':
         e = match_e(tz)
         tkn = next(tz)
@@ -146,6 +196,9 @@ _TOKENS = [
     ('OR', r'\|'),
     ('LBRACKET', r'\['),
     ('RBRACKET', r'\]'),
+    ('LPAREN', r'\('),
+    ('RPAREN', r'\)'),
+    ('COMMA', r','),
     ('DOT', r'\.'),
     ('NEWLINE', r'\n'),
     ('SKIP', r'\s+'),
