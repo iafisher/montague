@@ -1,8 +1,8 @@
 import unittest
 
 from montague.parsing import (
-    AndNode, CallNode, IteratorWithMemory, LambdaNode, OrNode, VarNode,
-    parse_formula, tokenize,
+    AllNode, AndNode, CallNode, ExistsNode, IteratorWithMemory, LambdaNode,
+    OrNode, VarNode, parse_formula, tokenize,
 )
 
 
@@ -115,6 +115,24 @@ class TokenizeTest(unittest.TestCase):
         self.assertEqual(tokens[1].typ, 'COMMA')
         self.assertEqual(tokens[1].value, ',')
 
+    def test_tokenize_keywords(self):
+        tokens = list(tokenize('all exists'))
+        self.assertEqual(len(tokens), 2)
+
+        self.assertEqual(tokens[0].typ, 'ALL')
+        self.assertEqual(tokens[0].value, 'all')
+        self.assertEqual(tokens[1].typ, 'EXISTS')
+        self.assertEqual(tokens[1].value, 'exists')
+
+    def test_tokenize_almost_keywords(self):
+        tokens = list(tokenize('all_ exists_'))
+        self.assertEqual(len(tokens), 2)
+
+        self.assertEqual(tokens[0].typ, 'SYMBOL')
+        self.assertEqual(tokens[0].value, 'all_')
+        self.assertEqual(tokens[1].typ, 'SYMBOL')
+        self.assertEqual(tokens[1].value, 'exists_')
+
 
 class ParseTest(unittest.TestCase):
     def test_parsing_symbol(self):
@@ -205,6 +223,18 @@ class ParseTest(unittest.TestCase):
         self.assertIsInstance(tree.args[0], VarNode)
         self.assertIsInstance(tree.args[1], AndNode)
         self.assertIsInstance(tree.args[2], CallNode)
+
+    def test_parsing_forall(self):
+        tree = parse_formula('all x.x & y')
+        self.assertIsInstance(tree, AllNode)
+        self.assertEqual(tree.symbol.value, 'x')
+        self.assertIsInstance(tree.body, AndNode)
+
+    def test_parsing_exists(self):
+        tree = parse_formula('exists x.x | y')
+        self.assertIsInstance(tree, ExistsNode)
+        self.assertEqual(tree.symbol.value, 'x')
+        self.assertIsInstance(tree.body, OrNode)
 
 
 class ParseErrorTest(unittest.TestCase):

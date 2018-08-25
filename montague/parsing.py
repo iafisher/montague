@@ -11,8 +11,14 @@ Grammar for formulas:
        | [ e ]
        | lambda
        | call
+       | forall
+       | exists
 
     lambda := LAMBDA SYMBOL DOT e
+
+    forall := ALL SYMBOL DOT e
+
+    exists := exists SYMBOL DOT e
 
     call    := SYMBOL LPAREN [ arglist ] RPAREN
     arglist := arglist COMMA e
@@ -39,6 +45,8 @@ AndNode = namedtuple('AndNode', ['left', 'right'])
 OrNode = namedtuple('OrNode', ['left', 'right'])
 LambdaNode = namedtuple('LambdaNode', ['parameter', 'body'])
 CallNode = namedtuple('CallNode', ['symbol', 'args'])
+AllNode = namedtuple('AllNode', ['symbol', 'body'])
+ExistsNode = namedtuple('ExistsNode', ['symbol', 'body'])
 
 
 def parse_formula(formula):
@@ -52,8 +60,14 @@ def parse_formula(formula):
 
       e := term { OR term }
          | lambda
+         | forall
+         | exists
 
       lambda := LAMBDA SYMBOL DOT e
+
+      forall := ALL SYMBOL DOT e
+
+      exists := exists SYMBOL DOT e
 
       term   := factor { AND factor }
       factor := SYMBOL call-postfix
@@ -82,7 +96,7 @@ def parse_formula(formula):
         return tree
     else:
         raise RuntimeError(f'trailing tokens in formula, line {tkn.line} column'
-            ' {tkn.column}') from None
+            f' {tkn.column}') from None
 
 
 def match_e(tz):
@@ -90,6 +104,10 @@ def match_e(tz):
     tz.push(tkn)
     if tkn.typ == 'LAMBDA':
         return match_lambda(tz)
+    elif tkn.typ == 'ALL':
+        return match_forall(tz)
+    elif tkn.typ == 'EXISTS':
+        return match_exists(tz)
     else:
         left_term = match_term(tz)
         try:
@@ -112,6 +130,24 @@ def match_lambda(tz):
     expect_token(tz, ('DOT',), '.')
     body = match_e(tz)
     return LambdaNode(parameter, body)
+
+
+def match_forall(tz):
+    expect_token(tz, ('ALL',), 'L')
+    tkn = expect_token(tz, ('SYMBOL',), 'symbol')
+    parameter = VarNode(tkn.value)
+    expect_token(tz, ('DOT',), '.')
+    body = match_e(tz)
+    return AllNode(parameter, body)
+
+
+def match_exists(tz):
+    expect_token(tz, ('EXISTS',), 'L')
+    tkn = expect_token(tz, ('SYMBOL',), 'symbol')
+    parameter = VarNode(tkn.value)
+    expect_token(tz, ('DOT',), '.')
+    body = match_e(tz)
+    return ExistsNode(parameter, body)
 
 
 def match_symbol_postfix(tz):
@@ -183,6 +219,8 @@ def expect_token(tz, typs, msg):
 Token = namedtuple('Token', ['typ', 'value', 'line', 'column'])
 _TOKENS = [
     ('LAMBDA', r'L'),
+    ('ALL', r'all\b'),
+    ('EXISTS', r'exists\b'),
     ('SYMBOL', r"[A-Za-z][A-Za-z0-9_'-]*"),
     ('AND', r'&'),
     ('OR', r'\|'),
