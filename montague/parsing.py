@@ -106,16 +106,10 @@ def match_e(tz):
 
 
 def match_lambda(tz):
-    tkn = next(tz)
-    if tkn.typ != 'LAMBDA':
-        raise RuntimeError(f'expected L, got {tkn.value}, line {tkn.line}')
-    tkn = next(tz)
-    if tkn.typ != 'SYMBOL':
-        raise RuntimeError(f'expected symbol, got {tkn.value}, line {tkn.line}')
+    expect_token(tz, ('LAMBDA',), 'L')
+    tkn = expect_token(tz, ('SYMBOL',), 'symbol')
     parameter = VarNode(tkn.value)
-    tkn = next(tz)
-    if tkn.typ != 'DOT':
-        raise RuntimeError(f'expected ., got {tkn.value}, line {tkn.line}')
+    expect_token(tz, ('DOT',), '.')
     body = match_e(tz)
     return LambdaNode(parameter, body)
 
@@ -129,9 +123,7 @@ def match_symbol_postfix(tz):
         tz.push(tkn)
         return None
     args = match_arglist(tz)
-    tkn = next(tz)
-    if tkn.typ != 'RPAREN':
-        raise RuntimeError(f'expected ), got {tkn.value}, line {tkn.line}')
+    expect_token(tz, ('RPAREN',), ')')
     return args
 
 
@@ -144,14 +136,12 @@ def match_arglist(tz):
             return args
         e = match_e(tz)
         args.append(e)
-        tkn = next(tz)
+        tkn = expect_token(tz, ('RPAREN', 'COMMA'), ', or )')
         if tkn.typ == 'RPAREN':
             tz.push(tkn)
             return args
-        elif tkn.typ == 'COMMA':
-            continue
         else:
-            raise RuntimeError(f'expected , or ), got {tkn.value}, line {tkn.line}')
+            continue
 
 
 def match_term(tz):
@@ -170,22 +160,24 @@ def match_term(tz):
 
 
 def match_factor(tz):
-    tkn = next(tz)
+    tkn = expect_token(tz, ('SYMBOL', 'LBRACKET'), 'symbol')
     if tkn.typ == 'SYMBOL':
         postfix = match_symbol_postfix(tz)
         if postfix is None:
             return VarNode(tkn.value)
         else:
             return CallNode(VarNode(tkn.value), postfix)
-    elif tkn.typ == 'LBRACKET':
-        e = match_e(tz)
-        tkn = next(tz)
-        if tkn.typ == 'RBRACKET':
-            return e
-        else:
-            raise RuntimeError(f'expected ], got {tkn.value}, line {tkn.line}')
     else:
-        raise RuntimeError(f'expected symbol, got {tkn.value}, line {tkn.line}')
+        e = match_e(tz)
+        expect_token(tz, 'RBRACKET', ']')
+        return e
+
+
+def expect_token(tz, typs, msg):
+    tkn = next(tz)
+    if tkn.typ not in typs:
+        raise RuntimeError(f'expected {msg}, got {tkn.value}, line {tkn.line}')
+    return tkn
 
 
 Token = namedtuple('Token', ['typ', 'value', 'line', 'column'])
