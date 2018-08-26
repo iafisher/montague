@@ -5,7 +5,7 @@ Version: August 2018
 """
 import readline
 
-from .parsing import parse_formula
+from .metalanguage import parse_formula
 
 
 if __name__ == '__main__':

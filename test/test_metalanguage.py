@@ -1,6 +1,6 @@
 import unittest
 
-from montague.parsing import (
+from montague.metalanguage import (
     AllNode, AndNode, CallNode, ExistsNode, IteratorWithMemory, LambdaNode,
     OrNode, VarNode, parse_formula, tokenize,
 )
