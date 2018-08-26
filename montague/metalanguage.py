@@ -126,7 +126,7 @@ def match_e(tz):
 def match_lambda(tz):
     expect_token(tz, ('LAMBDA',), 'L')
     tkn = expect_token(tz, ('SYMBOL',), 'symbol')
-    parameter = VarNode(tkn.value)
+    parameter = tkn.value
     expect_token(tz, ('DOT',), '.')
     body = match_e(tz)
     return LambdaNode(parameter, body)
@@ -135,7 +135,7 @@ def match_lambda(tz):
 def match_forall(tz):
     expect_token(tz, ('ALL',), 'L')
     tkn = expect_token(tz, ('SYMBOL',), 'symbol')
-    parameter = VarNode(tkn.value)
+    parameter = tkn.value
     expect_token(tz, ('DOT',), '.')
     body = match_e(tz)
     return AllNode(parameter, body)
@@ -144,7 +144,7 @@ def match_forall(tz):
 def match_exists(tz):
     expect_token(tz, ('EXISTS',), 'L')
     tkn = expect_token(tz, ('SYMBOL',), 'symbol')
-    parameter = VarNode(tkn.value)
+    parameter = tkn.value
     expect_token(tz, ('DOT',), '.')
     body = match_e(tz)
     return ExistsNode(parameter, body)
@@ -202,7 +202,7 @@ def match_factor(tz):
         if postfix is None:
             return VarNode(tkn.value)
         else:
-            return CallNode(VarNode(tkn.value), postfix)
+            return CallNode(tkn.value, postfix)
     else:
         e = match_e(tz)
         expect_token(tz, 'RBRACKET', ']')

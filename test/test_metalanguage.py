@@ -195,9 +195,9 @@ class ParseTest(unittest.TestCase):
     def test_parsing_lambda(self):
         tree = parse_formula('Lx.Ly.[x & y]')
         self.assertIsInstance(tree, LambdaNode)
-        self.assertEqual(tree.parameter.value, 'x')
+        self.assertEqual(tree.parameter, 'x')
         self.assertIsInstance(tree.body, LambdaNode)
-        self.assertEqual(tree.body.parameter.value, 'y')
+        self.assertEqual(tree.body.parameter, 'y')
         self.assertIsInstance(tree.body.body, AndNode)
         self.assertEqual(tree.body.body.left.value, 'x')
         self.assertEqual(tree.body.body.right.value, 'y')
@@ -205,20 +205,20 @@ class ParseTest(unittest.TestCase):
     def test_parsing_call(self):
         tree = parse_formula('Happy(x)')
         self.assertIsInstance(tree, CallNode)
-        self.assertEqual(tree.symbol.value, 'Happy')
+        self.assertEqual(tree.symbol, 'Happy')
         self.assertEqual(len(tree.args), 1)
         self.assertEqual(tree.args[0].value, 'x')
 
     def test_parsing_call_with_no_args(self):
         tree = parse_formula('Happy()')
         self.assertIsInstance(tree, CallNode)
-        self.assertEqual(tree.symbol.value, 'Happy')
+        self.assertEqual(tree.symbol, 'Happy')
         self.assertEqual(len(tree.args), 0)
 
     def test_parsing_call_with_several_args(self):
         tree = parse_formula('Between(x, y & z, [Capital(france)])')
         self.assertIsInstance(tree, CallNode)
-        self.assertEqual(tree.symbol.value, 'Between')
+        self.assertEqual(tree.symbol, 'Between')
         self.assertEqual(len(tree.args), 3)
         self.assertIsInstance(tree.args[0], VarNode)
         self.assertIsInstance(tree.args[1], AndNode)
@@ -227,13 +227,13 @@ class ParseTest(unittest.TestCase):
     def test_parsing_forall(self):
         tree = parse_formula('all x.x & y')
         self.assertIsInstance(tree, AllNode)
-        self.assertEqual(tree.symbol.value, 'x')
+        self.assertEqual(tree.symbol, 'x')
         self.assertIsInstance(tree.body, AndNode)
 
     def test_parsing_exists(self):
         tree = parse_formula('exists x.x | y')
         self.assertIsInstance(tree, ExistsNode)
-        self.assertEqual(tree.symbol.value, 'x')
+        self.assertEqual(tree.symbol, 'x')
         self.assertIsInstance(tree.body, OrNode)
 
 
