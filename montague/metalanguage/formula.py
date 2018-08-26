@@ -1,6 +1,4 @@
-"""The parser for the Montague system.
-
-Grammar for formulas:
+"""The parser for Montague's logical metalanguage.
 
     formula := e
              | lambda
@@ -39,6 +37,8 @@ import re
 import unittest
 from collections import namedtuple
 from enum import Enum
+
+from .utils import IteratorWithMemory, expect_token, tokenize
 
 
 VarNode = namedtuple('VarNode', 'value')
@@ -210,16 +210,7 @@ def match_factor(tz):
         return e
 
 
-def expect_token(tz, typs, msg):
-    tkn = next(tz)
-    if tkn.typ not in typs:
-        raise RuntimeError(f'expected {msg}, got "{tkn.value}", line {tkn.line}'
-            f' column {tkn.column}')
-    return tkn
-
-
-Token = namedtuple('Token', ['typ', 'value', 'line', 'column'])
-_FORMULA_TOKENS = [
+_TOKENS = [
     ('LAMBDA', r'L'),
     ('ALL', r'all\b'),
     ('EXISTS', r'exists\b'),
@@ -236,129 +227,9 @@ _FORMULA_TOKENS = [
     ('SKIP', r'\s+'),
     ('MISMATCH', r'.'),
 ]
-_FORMULA_TOKEN_REGEX = re.compile('|'.join('(?P<%s>%s)' % p
-    for p in _FORMULA_TOKENS))
+_TOKEN_REGEX = re.compile('|'.join('(?P<%s>%s)' % p for p in _TOKENS))
 
 
 def tokenize_formula(formula):
     """Return an iterator over the tokens of the formula."""
-    return tokenize(formula, _FORMULA_TOKEN_REGEX)
-
-
-class semtype(Enum):
-    ENTITY = 1
-    TRUTH_VALUE = 2
-    EVENT = 3
-
-
-TypeNode = namedtuple('TypeNode', ['left', 'right'])
-
-
-def parse_type(typestring):
-    """Parse a type string into a TypeNode or semtype object."""
-    tz = IteratorWithMemory(tokenize_type(typestring))
-    try:
-        tree = match_type(tz)
-    except StopIteration:
-        raise RuntimeError('premature end of type') from None
-
-    # Make sure there are no trailing tokens in the formula.
-    try:
-        tkn = next(tz)
-    except StopIteration:
-        return tree
-    else:
-        raise RuntimeError(f'trailing tokens in type, line {tkn.line} column'
-            f' {tkn.column}') from None
-
-
-def match_type(tz):
-    tkn = expect_token(tz, ('LANGLE', 'ATOM', 'COMPOUND'), '< or atomic type')
-    if tkn.typ == 'COMPOUND':
-        return TypeNode(
-            letter_to_type(tkn.value[0]),
-            letter_to_type(tkn.value[1])
-        )
-    elif tkn.typ == 'LANGLE':
-        left = match_type(tz)
-        expect_token(tz, ('COMMA',), ',')
-        right = match_type(tz)
-        expect_token(tz, ('RANGLE',), '>')
-        return TypeNode(left, right)
-    else:
-        return letter_to_type(tkn.value)
-
-
-def letter_to_type(letter):
-    if letter == 'e':
-        return semtype.ENTITY
-    elif letter == 'v':
-        return semtype.EVENT
-    elif letter == 't':
-        return semtype.TRUTH_VALUE
-    else:
-        raise RuntimeError(f'invalid type letter "{letter}"')
-
-
-_TYPE_TOKENS = [
-    ('LANGLE', r'<'),
-    ('RANGLE', r'>'),
-    ('COMMA', r','),
-    ('COMPOUND', r'[evt]{2}'),
-    ('ATOM', r'[evt]'),
-    ('NEWLINE', r'\n'),
-    ('SKIP', r'\s+'),
-    ('MISMATCH', r'.'),
-]
-_TYPE_TOKEN_REGEX = re.compile('|'.join('(?P<%s>%s)' % p for p in _TYPE_TOKENS))
-
-
-def tokenize_type(typestring):
-    """Return an iterator over the tokens of the type."""
-    return tokenize(typestring, _TYPE_TOKEN_REGEX)
-
-
-def tokenize(text, token_regex):
-    """Return an iterator over the tokens of the string.
-
-    Based on https://docs.python.org/3.6/library/re.html#writing-a-tokenizer
-    """
-    lineno = 1
-    line_start = 0
-    for mo in token_regex.finditer(text):
-        kind = mo.lastgroup
-        value = mo.group(kind)
-        if kind == 'NEWLINE':
-            line_start = mo.end()
-            line_num += 1
-        elif kind == 'SKIP':
-            pass
-        elif kind == 'MISMATCH':
-            raise RuntimeError(f'{value!r} not expected on line {lineno}')
-        else:
-            column = mo.start() - line_start
-            yield Token(kind, value, lineno, column)
-
-
-class IteratorWithMemory:
-    """A wrapper for any iterator that implements a push method to remember a
-    single value and return it on the subsequent call to __next__.
-    """
-
-    def __init__(self, iterator):
-        self.iterator = iterator
-        self.memory = None
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.memory is not None:
-            ret = self.memory
-            self.memory = None
-            return ret
-        else:
-            return next(self.iterator)
-
-    def push(self, val):
-        self.memory = val
+    return tokenize(formula, _TOKEN_REGEX)

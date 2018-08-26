@@ -1,20 +1,10 @@
 import unittest
 
-from montague.metalanguage import (
-    AllNode, AndNode, CallNode, ExistsNode, IteratorWithMemory, LambdaNode,
-    OrNode, Token, TypeNode, VarNode, parse_formula, parse_type, semtype,
-    tokenize_formula,
+from montague.metalanguage.formula import (
+    AllNode, AndNode, CallNode, ExistsNode, LambdaNode, OrNode, VarNode,
+    parse_formula, tokenize_formula,
 )
-
-
-class IteratorWithMemoryTest(unittest.TestCase):
-    def test_next_and_push(self):
-        L = [1, 2, 3]
-        it = IteratorWithMemory(iter(L))
-        self.assertEqual(1, next(it))
-        it.push(7)
-        self.assertEqual(7, next(it))
-        self.assertEqual(2, next(it))
+from montague.metalanguage.utils import Token
 
 
 class TokenizeTest(unittest.TestCase):
@@ -178,42 +168,6 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(tree, ExistsNode(
             'x',
             OrNode(VarNode('x'), VarNode('y')),
-        ))
-
-
-class TypeParseTest(unittest.TestCase):
-    def test_parsing_atomic_types(self):
-        tree = parse_type('e')
-        self.assertEqual(tree, semtype.ENTITY)
-        tree = parse_type('t')
-        self.assertEqual(tree, semtype.TRUTH_VALUE)
-        tree = parse_type('v')
-        self.assertEqual(tree, semtype.EVENT)
-
-    def test_parsing_compound_type(self):
-        tree = parse_type('<e, t>')
-        self.assertEqual(tree, TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE))
-
-    def test_parsing_abbreviated_compound_types(self):
-        tree = parse_type('et')
-        self.assertEqual(tree, TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE))
-        tree = parse_type('vt')
-        self.assertEqual(tree, TypeNode(semtype.EVENT, semtype.TRUTH_VALUE))
-
-    def test_parsing_big_compound_type(self):
-        tree = parse_type('<<e, t>, <e, <e, t>>>')
-        self.assertEqual(tree, TypeNode(
-            TypeNode(
-                semtype.ENTITY, 
-                semtype.TRUTH_VALUE
-            ),
-            TypeNode(
-                semtype.ENTITY,
-                TypeNode(
-                    semtype.ENTITY,
-                    semtype.TRUTH_VALUE
-                )
-            )
         ))
 
 
