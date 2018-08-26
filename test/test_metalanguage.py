@@ -2,7 +2,8 @@ import unittest
 
 from montague.metalanguage import (
     AllNode, AndNode, CallNode, ExistsNode, IteratorWithMemory, LambdaNode,
-    OrNode, Token, VarNode, parse_formula, tokenize,
+    OrNode, Token, TypeNode, VarNode, parse_formula, parse_type, semtype,
+    tokenize_formula,
 )
 
 
@@ -18,13 +19,13 @@ class IteratorWithMemoryTest(unittest.TestCase):
 
 class TokenizeTest(unittest.TestCase):
     def test_tokenize_symbol(self):
-        tokens = list(tokenize('a'))
+        tokens = list(tokenize_formula('a'))
         self.assertListEqual(tokens, [
             Token('SYMBOL', 'a', 1, 0),
         ])
 
     def test_tokenize_multiple_symbols(self):
-        tokens = list(tokenize('a\' b0 cccc'))
+        tokens = list(tokenize_formula('a\' b0 cccc'))
         self.assertListEqual(tokens, [
             Token('SYMBOL', 'a\'', 1, 0),
             Token('SYMBOL', 'b0', 1, 3),
@@ -32,7 +33,7 @@ class TokenizeTest(unittest.TestCase):
         ])
 
     def test_tokenize_conjunction(self):
-        tokens = list(tokenize('a&b'))
+        tokens = list(tokenize_formula('a&b'))
         self.assertListEqual(tokens, [
             Token('SYMBOL', 'a', 1, 0),
             Token('AND', '&', 1, 1),
@@ -40,7 +41,7 @@ class TokenizeTest(unittest.TestCase):
         ])
 
     def test_tokenize_disjunction(self):
-        tokens = list(tokenize('a|b'))
+        tokens = list(tokenize_formula('a|b'))
         self.assertListEqual(tokens, [
             Token('SYMBOL', 'a', 1, 0),
             Token('OR', '|', 1, 1),
@@ -48,7 +49,7 @@ class TokenizeTest(unittest.TestCase):
         ])
 
     def test_tokenize_brackets(self):
-        tokens = list(tokenize('[a]'))
+        tokens = list(tokenize_formula('[a]'))
         self.assertListEqual(tokens, [
             Token('LBRACKET', '[', 1, 0),
             Token('SYMBOL', 'a', 1, 1),
@@ -56,13 +57,13 @@ class TokenizeTest(unittest.TestCase):
         ])
 
     def test_tokenize_lambda_op(self):
-        tokens = list(tokenize('L'))
+        tokens = list(tokenize_formula('L'))
         self.assertListEqual(tokens, [
             Token('LAMBDA', 'L', 1, 0),
         ])
 
     def test_tokenize_lambda(self):
-        tokens = list(tokenize('Lx.x'))
+        tokens = list(tokenize_formula('Lx.x'))
         self.assertListEqual(tokens, [
             Token('LAMBDA', 'L', 1, 0),
             Token('SYMBOL', 'x', 1, 1),
@@ -71,14 +72,14 @@ class TokenizeTest(unittest.TestCase):
         ])
 
     def test_tokenize_parentheses(self):
-        tokens = list(tokenize('()'))
+        tokens = list(tokenize_formula('()'))
         self.assertListEqual(tokens, [
             Token('LPAREN', '(', 1, 0),
             Token('RPAREN', ')', 1, 1),
         ])
 
     def test_tokenize_comma(self):
-        tokens = list(tokenize('a,b'))
+        tokens = list(tokenize_formula('a,b'))
         self.assertListEqual(tokens, [
             Token('SYMBOL', 'a', 1, 0),
             Token('COMMA', ',', 1, 1),
@@ -86,14 +87,14 @@ class TokenizeTest(unittest.TestCase):
         ])
 
     def test_tokenize_keywords(self):
-        tokens = list(tokenize('all exists'))
+        tokens = list(tokenize_formula('all exists'))
         self.assertListEqual(tokens, [
             Token('ALL', 'all', 1, 0),
             Token('EXISTS', 'exists', 1, 4),
         ])
 
     def test_tokenize_almost_keywords(self):
-        tokens = list(tokenize('all_ exists_'))
+        tokens = list(tokenize_formula('all_ exists_'))
         self.assertListEqual(tokens, [
             Token('SYMBOL', 'all_', 1, 0),
             Token('SYMBOL', 'exists_', 1, 5),
@@ -177,6 +178,42 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(tree, ExistsNode(
             'x',
             OrNode(VarNode('x'), VarNode('y')),
+        ))
+
+
+class TypeParseTest(unittest.TestCase):
+    def test_parsing_atomic_types(self):
+        tree = parse_type('e')
+        self.assertEqual(tree, semtype.ENTITY)
+        tree = parse_type('t')
+        self.assertEqual(tree, semtype.TRUTH_VALUE)
+        tree = parse_type('v')
+        self.assertEqual(tree, semtype.EVENT)
+
+    def test_parsing_compound_type(self):
+        tree = parse_type('<e, t>')
+        self.assertEqual(tree, TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE))
+
+    def test_parsing_abbreviated_compound_types(self):
+        tree = parse_type('et')
+        self.assertEqual(tree, TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE))
+        tree = parse_type('vt')
+        self.assertEqual(tree, TypeNode(semtype.EVENT, semtype.TRUTH_VALUE))
+
+    def test_parsing_big_compound_type(self):
+        tree = parse_type('<<e, t>, <e, <e, t>>')
+        self.assertEqual(tree, TypeNode(
+            TypeNode(
+                semtype.ENTITY, 
+                semtype.TRUTH_VALUE
+            ),
+            TypeNode(
+                semtype.ENTITY,
+                TypeNode(
+                    semtype.ENTITY,
+                    semtype.TRUTH_VALUE
+                )
+            )
         ))
 
 

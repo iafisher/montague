@@ -38,6 +38,7 @@ Version: August 2018
 import re
 import unittest
 from collections import namedtuple
+from enum import Enum
 
 
 VarNode = namedtuple('VarNode', 'value')
@@ -80,10 +81,10 @@ def parse_formula(formula):
       arglist := arglist COMMA e
                | e
 
-    For the definition of the tokens, see the _TOKENS global variable in this
-    module.
+    For the definition of the tokens, see the _FORMULA_TOKENS global variable in
+    this module.
     """
-    tz = IteratorWithMemory(tokenize(formula))
+    tz = IteratorWithMemory(tokenize_formula(formula))
     try:
         tree = match_e(tz)
     except StopIteration:
@@ -217,7 +218,7 @@ def expect_token(tz, typs, msg):
 
 
 Token = namedtuple('Token', ['typ', 'value', 'line', 'column'])
-_TOKENS = [
+_FORMULA_TOKENS = [
     ('LAMBDA', r'L'),
     ('ALL', r'all\b'),
     ('EXISTS', r'exists\b'),
@@ -234,17 +235,18 @@ _TOKENS = [
     ('SKIP', r'\s+'),
     ('MISMATCH', r'.'),
 ]
-_TOKEN_REGEX = re.compile('|'.join('(?P<%s>%s)' % p for p in _TOKENS))
+_FORMULA_TOKEN_REGEX = re.compile('|'.join('(?P<%s>%s)' % p
+    for p in _FORMULA_TOKENS))
 
 
-def tokenize(formula):
+def tokenize_formula(formula):
     """Return an iterator over the tokens of the formula.
 
     Based on https://docs.python.org/3.6/library/re.html#writing-a-tokenizer
     """
     lineno = 1
     line_start = 0
-    for mo in _TOKEN_REGEX.finditer(formula):
+    for mo in _FORMULA_TOKEN_REGEX.finditer(formula):
         kind = mo.lastgroup
         value = mo.group(kind)
         if kind == 'NEWLINE':
@@ -257,6 +259,20 @@ def tokenize(formula):
         else:
             column = mo.start() - line_start
             yield Token(kind, value, lineno, column)
+
+
+class semtype(Enum):
+    ENTITY = 1
+    TRUTH_VALUE = 2
+    EVENT = 3
+
+
+TypeNode = namedtuple('TypeNode', ['left', 'right'])
+
+
+def parse_type(typestring):
+    """Parse a type string into a TypeNode or semtype object."""
+    return None
 
 
 class IteratorWithMemory:
