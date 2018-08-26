@@ -2,7 +2,7 @@ import unittest
 
 from montague.metalanguage import (
     AllNode, AndNode, CallNode, ExistsNode, IteratorWithMemory, LambdaNode,
-    OrNode, VarNode, parse_formula, tokenize,
+    OrNode, Token, VarNode, parse_formula, tokenize,
 )
 
 
@@ -18,120 +18,86 @@ class IteratorWithMemoryTest(unittest.TestCase):
 
 class TokenizeTest(unittest.TestCase):
     def test_tokenize_symbol(self):
-        tz = tokenize('a')
-        tkn = next(tz)
-        self.assertEqual(tkn.typ, 'SYMBOL')
-        self.assertEqual(tkn.value, 'a')
-        self.assertEqual(tkn.line, 1)
-        self.assertEqual(tkn.column, 0)
-
-        with self.assertRaises(StopIteration):
-            next(tz)
+        tokens = list(tokenize('a'))
+        self.assertListEqual(tokens, [
+            Token('SYMBOL', 'a', 1, 0),
+        ])
 
     def test_tokenize_multiple_symbols(self):
         tokens = list(tokenize("a' b0 cccc"))
-        self.assertEqual(len(tokens), 3)
-
-        self.assertEqual(tokens[0].typ, 'SYMBOL')
-        self.assertEqual(tokens[0].value, "a'")
-        self.assertEqual(tokens[0].line, 1)
-        self.assertEqual(tokens[0].column, 0)
-
-        self.assertEqual(tokens[1].typ, 'SYMBOL')
-        self.assertEqual(tokens[1].value, 'b0')
-        self.assertEqual(tokens[1].line, 1)
-        self.assertEqual(tokens[1].column, 3)
-
-        self.assertEqual(tokens[2].typ, 'SYMBOL')
-        self.assertEqual(tokens[2].value, 'cccc')
-        self.assertEqual(tokens[2].line, 1)
-        self.assertEqual(tokens[2].column, 6)
+        self.assertListEqual(tokens, [
+            Token('SYMBOL', 'a\'', 1, 0),
+            Token('SYMBOL', 'b0', 1, 3),
+            Token('SYMBOL', 'cccc', 1, 6),
+        ])
 
     def test_tokenize_conjunction(self):
         tokens = list(tokenize('a&b'))
-        self.assertEqual(len(tokens), 3)
-
-        self.assertEqual(tokens[0].typ, 'SYMBOL')
-        self.assertEqual(tokens[0].value, 'a')
-        self.assertEqual(tokens[1].typ, 'AND')
-        self.assertEqual(tokens[1].value, '&')
-        self.assertEqual(tokens[2].typ, 'SYMBOL')
-        self.assertEqual(tokens[2].value, 'b')
+        self.assertListEqual(tokens, [
+            Token('SYMBOL', 'a', 1, 0),
+            Token('AND', '&', 1, 1),
+            Token('SYMBOL', 'b', 1, 2),
+        ])
 
     def test_tokenize_disjunction(self):
         tokens = list(tokenize('a|b'))
-        self.assertEqual(len(tokens), 3)
-
-        self.assertEqual(tokens[0].typ, 'SYMBOL')
-        self.assertEqual(tokens[0].value, 'a')
-        self.assertEqual(tokens[1].typ, 'OR')
-        self.assertEqual(tokens[1].value, '|')
-        self.assertEqual(tokens[2].typ, 'SYMBOL')
-        self.assertEqual(tokens[2].value, 'b')
+        self.assertListEqual(tokens, [
+            Token('SYMBOL', 'a', 1, 0),
+            Token('OR', '|', 1, 1),
+            Token('SYMBOL', 'b', 1, 2),
+        ])
 
     def test_tokenize_brackets(self):
         tokens = list(tokenize('[a]'))
-        self.assertEqual(len(tokens), 3)
-
-        self.assertEqual(tokens[0].typ, 'LBRACKET')
-        self.assertEqual(tokens[0].value, '[')
-        self.assertEqual(tokens[2].typ, 'RBRACKET')
-        self.assertEqual(tokens[2].value, ']')
+        self.assertListEqual(tokens, [
+            Token('LBRACKET', '[', 1, 0),
+            Token('SYMBOL', 'a', 1, 1),
+            Token('RBRACKET', ']', 1, 2),
+        ])
 
     def test_tokenize_lambda_op(self):
         tokens = list(tokenize('L'))
-        self.assertEqual(len(tokens), 1)
-        self.assertEqual(tokens[0].typ, 'LAMBDA')
-        self.assertEqual(tokens[0].value, 'L')
+        self.assertListEqual(tokens, [
+            Token('LAMBDA', 'L', 1, 0),
+        ])
 
     def test_tokenize_lambda(self):
         tokens = list(tokenize('Lx.x'))
-        self.assertEqual(len(tokens), 4)
-
-        self.assertEqual(tokens[0].typ, 'LAMBDA')
-        self.assertEqual(tokens[0].value, 'L')
-        self.assertEqual(tokens[1].typ, 'SYMBOL')
-        self.assertEqual(tokens[1].value, 'x')
-        self.assertEqual(tokens[2].typ, 'DOT')
-        self.assertEqual(tokens[2].value, '.')
-        self.assertEqual(tokens[3].typ, 'SYMBOL')
-        self.assertEqual(tokens[3].value, 'x')
+        self.assertListEqual(tokens, [
+            Token('LAMBDA', 'L', 1, 0),
+            Token('SYMBOL', 'x', 1, 1),
+            Token('DOT', '.', 1, 2),
+            Token('SYMBOL', 'x', 1, 3),
+        ])
 
     def test_tokenize_parentheses(self):
         tokens = list(tokenize('()'))
-        self.assertEqual(len(tokens), 2)
-
-        self.assertEqual(tokens[0].typ, 'LPAREN')
-        self.assertEqual(tokens[0].value, '(')
-        self.assertEqual(tokens[1].typ, 'RPAREN')
-        self.assertEqual(tokens[1].value, ')')
+        self.assertListEqual(tokens, [
+            Token('LPAREN', '(', 1, 0),
+            Token('RPAREN', ')', 1, 1),
+        ])
 
     def test_tokenize_comma(self):
         tokens = list(tokenize('a,b'))
-        self.assertEqual(len(tokens), 3)
-
-        self.assertEqual(tokens[0].typ, 'SYMBOL')
-        self.assertEqual(tokens[2].typ, 'SYMBOL')
-        self.assertEqual(tokens[1].typ, 'COMMA')
-        self.assertEqual(tokens[1].value, ',')
+        self.assertListEqual(tokens, [
+            Token('SYMBOL', 'a', 1, 0),
+            Token('COMMA', ',', 1, 1),
+            Token('SYMBOL', 'b', 1, 2),
+        ])
 
     def test_tokenize_keywords(self):
         tokens = list(tokenize('all exists'))
-        self.assertEqual(len(tokens), 2)
-
-        self.assertEqual(tokens[0].typ, 'ALL')
-        self.assertEqual(tokens[0].value, 'all')
-        self.assertEqual(tokens[1].typ, 'EXISTS')
-        self.assertEqual(tokens[1].value, 'exists')
+        self.assertListEqual(tokens, [
+            Token('ALL', 'all', 1, 0),
+            Token('EXISTS', 'exists', 1, 4),
+        ])
 
     def test_tokenize_almost_keywords(self):
         tokens = list(tokenize('all_ exists_'))
-        self.assertEqual(len(tokens), 2)
-
-        self.assertEqual(tokens[0].typ, 'SYMBOL')
-        self.assertEqual(tokens[0].value, 'all_')
-        self.assertEqual(tokens[1].typ, 'SYMBOL')
-        self.assertEqual(tokens[1].value, 'exists_')
+        self.assertListEqual(tokens, [
+            Token('SYMBOL', 'all_', 1, 0),
+            Token('SYMBOL', 'exists_', 1, 5),
+        ])
 
 
 class ParseTest(unittest.TestCase):
