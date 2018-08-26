@@ -24,7 +24,7 @@ class TokenizeTest(unittest.TestCase):
         ])
 
     def test_tokenize_multiple_symbols(self):
-        tokens = list(tokenize("a' b0 cccc"))
+        tokens = list(tokenize('a\' b0 cccc'))
         self.assertListEqual(tokens, [
             Token('SYMBOL', 'a\'', 1, 0),
             Token('SYMBOL', 'b0', 1, 3),
@@ -103,104 +103,81 @@ class TokenizeTest(unittest.TestCase):
 class ParseTest(unittest.TestCase):
     def test_parsing_symbol(self):
         tree = parse_formula('a')
-        self.assertIsInstance(tree, VarNode)
-        self.assertEqual(tree.value, 'a')
+        self.assertEqual(tree, VarNode('a'))
 
     def test_parsing_another_symbol(self):
-        tree = parse_formula("s8DVY_BUvybJH-VDNS'JhjS")
-        self.assertIsInstance(tree, VarNode)
-        self.assertEqual(tree.value, "s8DVY_BUvybJH-VDNS'JhjS")
+        tree = parse_formula('s8DVY_BUvybJH-VDNS\'JhjS')
+        self.assertEqual(tree, VarNode('s8DVY_BUvybJH-VDNS\'JhjS'))
 
     def test_parsing_conjunction(self):
-        tree = parse_formula("a & a'")
-        self.assertIsInstance(tree, AndNode)
-        left = tree.left
-        self.assertIsInstance(left, VarNode)
-        self.assertEqual(left.value, 'a')
-        right = tree.right
-        self.assertIsInstance(right, VarNode)
-        self.assertEqual(right.value, "a'")
+        tree = parse_formula('a & a\'')
+        self.assertEqual(tree, AndNode(VarNode('a'), VarNode('a\'')))
 
     def test_parsing_disjunction(self):
-        tree = parse_formula("b | b0")
-        self.assertIsInstance(tree, OrNode)
-        left = tree.left
-        self.assertIsInstance(left, VarNode)
-        self.assertEqual(left.value, 'b')
-        right = tree.right
-        self.assertIsInstance(right, VarNode)
-        self.assertEqual(right.value, "b0")
+        tree = parse_formula('b | b0')
+        self.assertEqual(tree, OrNode(VarNode('b'), VarNode('b0')))
 
     def test_parsing_precedence(self):
         tree = parse_formula('x & y | z')
-        self.assertIsInstance(tree, OrNode)
-        self.assertIsInstance(tree.left, AndNode)
-        self.assertEqual(tree.left.left.value, 'x')
-        self.assertEqual(tree.left.right.value, 'y')
-        self.assertIsInstance(tree.right, VarNode)
-        self.assertEqual(tree.right.value, 'z')
+        self.assertEqual(tree, OrNode(
+            AndNode(VarNode('x'), VarNode('y')),
+            VarNode('z')
+        ))
 
     def test_parsing_precedence2(self):
         tree = parse_formula('x | y & z')
-        self.assertIsInstance(tree, OrNode)
-        self.assertIsInstance(tree.left, VarNode)
-        self.assertEqual(tree.left.value, 'x')
-        self.assertIsInstance(tree.right, AndNode)
-        self.assertEqual(tree.right.left.value, 'y')
-        self.assertEqual(tree.right.right.value, 'z')
+        self.assertEqual(tree, OrNode(
+            VarNode('x'),
+            AndNode(VarNode('y'), VarNode('z'))
+        ))
 
     def test_parsing_brackets(self):
         tree = parse_formula('[x | y] & z')
-        self.assertIsInstance(tree, AndNode)
-        self.assertIsInstance(tree.left, OrNode)
-        self.assertEqual(tree.left.left.value, 'x')
-        self.assertEqual(tree.left.right.value, 'y')
-        self.assertIsInstance(tree.right, VarNode)
-        self.assertEqual(tree.right.value, 'z')
+        self.assertEqual(tree, AndNode(
+            OrNode(VarNode('x'), VarNode('y')),
+            VarNode('z')
+        ))
 
     def test_parsing_lambda(self):
         tree = parse_formula('Lx.Ly.[x & y]')
-        self.assertIsInstance(tree, LambdaNode)
-        self.assertEqual(tree.parameter, 'x')
-        self.assertIsInstance(tree.body, LambdaNode)
-        self.assertEqual(tree.body.parameter, 'y')
-        self.assertIsInstance(tree.body.body, AndNode)
-        self.assertEqual(tree.body.body.left.value, 'x')
-        self.assertEqual(tree.body.body.right.value, 'y')
+        self.assertEqual(tree, LambdaNode('x',
+            LambdaNode('y',
+                AndNode(VarNode('x'), VarNode('y'))
+            )
+        ))
 
     def test_parsing_call(self):
         tree = parse_formula('Happy(x)')
-        self.assertIsInstance(tree, CallNode)
-        self.assertEqual(tree.symbol, 'Happy')
-        self.assertEqual(len(tree.args), 1)
-        self.assertEqual(tree.args[0].value, 'x')
+        self.assertEqual(tree, CallNode('Happy', [VarNode('x')]))
 
     def test_parsing_call_with_no_args(self):
         tree = parse_formula('Happy()')
-        self.assertIsInstance(tree, CallNode)
-        self.assertEqual(tree.symbol, 'Happy')
-        self.assertEqual(len(tree.args), 0)
+        self.assertEqual(tree, CallNode('Happy', []))
 
     def test_parsing_call_with_several_args(self):
         tree = parse_formula('Between(x, y & z, [Capital(france)])')
-        self.assertIsInstance(tree, CallNode)
-        self.assertEqual(tree.symbol, 'Between')
-        self.assertEqual(len(tree.args), 3)
-        self.assertIsInstance(tree.args[0], VarNode)
-        self.assertIsInstance(tree.args[1], AndNode)
-        self.assertIsInstance(tree.args[2], CallNode)
+        self.assertEqual(tree, CallNode(
+            'Between',
+            [
+                VarNode('x'),
+                AndNode(VarNode('y'), VarNode('z')),
+                CallNode('Capital', [VarNode('france')]),
+            ]
+        ))
 
     def test_parsing_forall(self):
         tree = parse_formula('all x.x & y')
-        self.assertIsInstance(tree, AllNode)
-        self.assertEqual(tree.symbol, 'x')
-        self.assertIsInstance(tree.body, AndNode)
+        self.assertEqual(tree, AllNode(
+            'x',
+            AndNode(VarNode('x'), VarNode('y')),
+        ))
 
     def test_parsing_exists(self):
         tree = parse_formula('exists x.x | y')
-        self.assertIsInstance(tree, ExistsNode)
-        self.assertEqual(tree.symbol, 'x')
-        self.assertIsInstance(tree.body, OrNode)
+        self.assertEqual(tree, ExistsNode(
+            'x',
+            OrNode(VarNode('x'), VarNode('y')),
+        ))
 
 
 class ParseErrorTest(unittest.TestCase):
