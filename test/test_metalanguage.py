@@ -201,7 +201,7 @@ class TypeParseTest(unittest.TestCase):
         self.assertEqual(tree, TypeNode(semtype.EVENT, semtype.TRUTH_VALUE))
 
     def test_parsing_big_compound_type(self):
-        tree = parse_type('<<e, t>, <e, <e, t>>')
+        tree = parse_type('<<e, t>, <e, <e, t>>>')
         self.assertEqual(tree, TypeNode(
             TypeNode(
                 semtype.ENTITY, 
