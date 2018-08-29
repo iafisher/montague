@@ -125,6 +125,29 @@ class FormulaParseTest(unittest.TestCase):
             ]
         ))
 
+    def test_parsing_call_with_lambda(self):
+        tree = parse_formula('(Lx.x)(j)')
+        self.assertEqual(tree, CallNode(
+            LambdaNode('x', VarNode('x')),
+            [VarNode('j')]
+        ))
+
+    def test_parsing_call_with_multiple_lambdas(self):
+        tree = parse_formula('((Lx.Ly.x & y) (a)) (b)')
+        self.assertEqual(tree, CallNode(
+            CallNode(
+                LambdaNode(
+                    'x',
+                    LambdaNode(
+                        'y',
+                        AndNode(VarNode('x'), VarNode('y'))
+                    )
+                ),
+                [VarNode('a')]
+            ),
+            [VarNode('b')]
+        ))
+
     def test_parsing_forall(self):
         tree = parse_formula('Ax.x & y')
         self.assertEqual(tree, AllNode(

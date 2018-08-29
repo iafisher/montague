@@ -43,7 +43,7 @@ class TreeToFormula(Transformer):
         return ExistsNode(matches[0], matches[1])
 
     def call(self, matches):
-        return CallNode(VarNode(matches[0]), matches[1:])
+        return CallNode(matches[0], matches[1:])
 
 
 formula_parser = Lark('''
@@ -55,7 +55,7 @@ formula_parser = Lark('''
     ?term: factor | factor AND term
     ?factor: variable | "[" expr "]" | call | lambda_ | forall | exists
 
-    call: SYMBOL "(" _arglist? ")"
+    call: variable "(" _arglist? ")" | "(" expr ")" "(" _arglist? ")"
     _arglist: ( expr "," )* expr
 
     lambda_: "L" SYMBOL "." expr
