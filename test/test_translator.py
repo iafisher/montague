@@ -4,7 +4,8 @@ import unittest
 
 from montague.formula import (
     AllNode, AndNode, CallNode, ExistsNode, LambdaNode, OrNode, TypeNode,
-    VarNode, parse_formula, parse_type, semtype,
+    VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
+    TYPE_TRUTH_VALUE,
 )
 from montague.translator import (
     LexiconEntry, can_combine, combine, load_lexicon, replace_variable,
@@ -15,20 +16,20 @@ from montague.translator import (
 test_lexicon = {
   "bad": LexiconEntry(
     LambdaNode('x', CallNode('Bad', [VarNode('x')])),
-    TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE),
+    TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE),
   ),
   "is": LexiconEntry(
     LambdaNode('P', VarNode('P')),
     TypeNode(
-            TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE),
-            TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE),
+            TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE),
+            TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE),
     ),
   ),
   "good": LexiconEntry(
     LambdaNode('x', CallNode('Good', [VarNode('x')])),
-    TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE),
+    TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE),
   ),
-  "John": LexiconEntry(VarNode('j'), semtype.ENTITY),
+  "John": LexiconEntry(VarNode('j'), TYPE_ENTITY),
 }
 
 
@@ -37,21 +38,21 @@ class TranslatorTest(unittest.TestCase):
         tree = translate_sentence('is good', test_lexicon)
         self.assertEqual(tree, LexiconEntry(
             LambdaNode('x', CallNode('Good', [VarNode('x')])),
-            TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE)
+            TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
         ))
 
     def test_john_is_good(self):
         tree = translate_sentence('John is good', test_lexicon)
         self.assertEqual(tree, LexiconEntry(
             CallNode('Good', [VarNode('j')]),
-            semtype.TRUTH_VALUE
+            TYPE_TRUTH_VALUE
         ))
 
     def test_john_is_bad(self):
         tree = translate_sentence('John is bad', test_lexicon)
         self.assertEqual(tree, LexiconEntry(
             CallNode('Bad', [VarNode('j')]),
-            semtype.TRUTH_VALUE
+            TYPE_TRUTH_VALUE
         ))
 
 
@@ -60,12 +61,12 @@ class CombinerTest(unittest.TestCase):
         parse_formula('Lx.P(x)'),
         parse_type('<e, t>')
     )
-    entity = LexiconEntry(VarNode('me'), semtype.ENTITY)
+    entity = LexiconEntry(VarNode('me'), TYPE_ENTITY)
 
     def test_saturate_predicate(self):
         self.assertTrue(can_combine(self.pred, self.entity))
         saturated = combine(self.pred, self.entity)
-        self.assertEqual(saturated.type, semtype.TRUTH_VALUE)
+        self.assertEqual(saturated.type, TYPE_TRUTH_VALUE)
         self.assertEqual(saturated.denotation, CallNode('P', [VarNode('me')]))
 
     def test_can_combine_is_good(self):

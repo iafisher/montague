@@ -75,10 +75,9 @@ def parse_formula(formula):
 TypeNode = namedtuple('TypeNode', ['left', 'right'])
 
 
-class semtype(Enum):
-    ENTITY = 1
-    TRUTH_VALUE = 2
-    EVENT = 3
+TYPE_ENTITY = 'e'
+TYPE_TRUTH_VALUE = 't'
+TYPE_EVENT = 'v'
 
 
 class TreeToType(Transformer):
@@ -87,11 +86,9 @@ class TreeToType(Transformer):
             return TypeNode(matches[0], matches[1])
         else:
             if len(matches[0]) == 2:
-                left = letter_to_type[matches[0][0]]
-                right = letter_to_type[matches[0][1]]
-                return TypeNode(left, right)
+                return TypeNode(matches[0][0], matches[0][1])
             else:
-                return letter_to_type[matches[0]]
+                return matches[0]
 
 
 type_parser = Lark('''
@@ -108,16 +105,6 @@ type_parser = Lark('''
 
 def parse_type(typestring):
     return type_parser.parse(typestring)
-
-
-letter_to_type = {
-    'e': semtype.ENTITY,
-    'v': semtype.EVENT,
-    't': semtype.TRUTH_VALUE
-}
-
-
-type_to_letter = {v: k for k, v in letter_to_type.items()}
 
 
 def unparse_formula(tree):
@@ -140,12 +127,12 @@ def unparse_formula(tree):
 
 def unparse_type(tree, *, concise=False):
     if isinstance(tree, TypeNode):
-        if concise and isinstance(tree.left, semtype) \
-            and isinstance(tree.right, semtype):
-            return type_to_letter[tree.left] + type_to_letter[tree.right]
+        if concise and not isinstance(tree.left, TypeNode) \
+            and not isinstance(tree.right, TypeNode):
+            return tree.left + tree.right
         else:
             left = unparse_type(tree.left, concise=concise)
             right = unparse_type(tree.right, concise=concise)
             return f'<{left}, {right}>'
     else:
-        return type_to_letter[tree]
+        return tree

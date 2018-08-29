@@ -2,7 +2,8 @@ import unittest
 
 from montague.formula import (
     AllNode, AndNode, CallNode, ExistsNode, LambdaNode, OrNode, TypeNode,
-    VarNode, parse_formula, parse_type, semtype, unparse_formula, unparse_type,
+    VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
+    TYPE_TRUTH_VALUE, unparse_formula, unparse_type,
 )
 
 from lark.exceptions import LarkError
@@ -133,34 +134,34 @@ class FormulaParseErrorTest(unittest.TestCase):
 class TypeParseTest(unittest.TestCase):
     def test_parsing_atomic_types(self):
         tree = parse_type('e')
-        self.assertEqual(tree, semtype.ENTITY)
+        self.assertEqual(tree, TYPE_ENTITY)
         tree = parse_type('t')
-        self.assertEqual(tree, semtype.TRUTH_VALUE)
+        self.assertEqual(tree, TYPE_TRUTH_VALUE)
         tree = parse_type('v')
-        self.assertEqual(tree, semtype.EVENT)
+        self.assertEqual(tree, TYPE_EVENT)
 
     def test_parsing_compound_type(self):
         tree = parse_type('<e, t>')
-        self.assertEqual(tree, TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE))
+        self.assertEqual(tree, TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE))
 
     def test_parsing_abbreviated_compound_types(self):
         tree = parse_type('et')
-        self.assertEqual(tree, TypeNode(semtype.ENTITY, semtype.TRUTH_VALUE))
+        self.assertEqual(tree, TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE))
         tree = parse_type('vt')
-        self.assertEqual(tree, TypeNode(semtype.EVENT, semtype.TRUTH_VALUE))
+        self.assertEqual(tree, TypeNode(TYPE_EVENT, TYPE_TRUTH_VALUE))
 
     def test_parsing_big_compound_type(self):
         tree = parse_type('<<e, t>, <e, <e, t>>>')
         self.assertEqual(tree, TypeNode(
             TypeNode(
-                semtype.ENTITY,
-                semtype.TRUTH_VALUE
+                TYPE_ENTITY,
+                TYPE_TRUTH_VALUE
             ),
             TypeNode(
-                semtype.ENTITY,
+                TYPE_ENTITY,
                 TypeNode(
-                    semtype.ENTITY,
-                    semtype.TRUTH_VALUE
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
                 )
             )
         ))
@@ -243,63 +244,63 @@ class UnparseFormulaTest(unittest.TestCase):
 
 class UnparseTypeTest(unittest.TestCase):
     def test_unparse_entity(self):
-        unparsed = unparse_type(semtype.ENTITY)
+        unparsed = unparse_type(TYPE_ENTITY)
         self.assertEqual(unparsed, 'e')
 
     def test_unparse_event(self):
-        unparsed = unparse_type(semtype.EVENT)
+        unparsed = unparse_type(TYPE_EVENT)
         self.assertEqual(unparsed, 'v')
 
     def test_unparse_truth(self):
-        unparsed = unparse_type(semtype.TRUTH_VALUE)
+        unparsed = unparse_type(TYPE_TRUTH_VALUE)
         self.assertEqual(unparsed, 't')
 
     def test_unparse_recursive_type(self):
         unparsed = unparse_type(TypeNode(
-            semtype.ENTITY,
-            semtype.TRUTH_VALUE
+            TYPE_ENTITY,
+            TYPE_TRUTH_VALUE
         ))
         self.assertEqual(unparsed, '<e, t>')
 
     def test_unparse_deeply_recursive_type(self):
         unparsed = unparse_type(TypeNode(
-            semtype.EVENT,
+            TYPE_EVENT,
             TypeNode(
                 TypeNode(
-                    semtype.ENTITY,
-                    semtype.TRUTH_VALUE
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
                 ),
                 TypeNode(
-                    semtype.ENTITY,
-                    semtype.TRUTH_VALUE
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
                 )
             )
         ))
         self.assertEqual(unparsed, '<v, <<e, t>, <e, t>>>')
 
     def test_concisely_unparse_atomic_types(self):
-        self.assertEqual(unparse_type(semtype.ENTITY, concise=True), 'e')
-        self.assertEqual(unparse_type(semtype.EVENT, concise=True), 'v')
-        self.assertEqual(unparse_type(semtype.TRUTH_VALUE, concise=True), 't')
+        self.assertEqual(unparse_type(TYPE_ENTITY, concise=True), 'e')
+        self.assertEqual(unparse_type(TYPE_EVENT, concise=True), 'v')
+        self.assertEqual(unparse_type(TYPE_TRUTH_VALUE, concise=True), 't')
 
     def test_concisely_unparse_recursive_type(self):
         unparsed = unparse_type(TypeNode(
-            semtype.ENTITY,
-            semtype.TRUTH_VALUE
+            TYPE_ENTITY,
+            TYPE_TRUTH_VALUE
         ), concise=True)
         self.assertEqual(unparsed, 'et')
 
     def test_concisely_unparse_deeply_recursive_type(self):
         unparsed = unparse_type(TypeNode(
-            semtype.EVENT,
+            TYPE_EVENT,
             TypeNode(
                 TypeNode(
-                    semtype.ENTITY,
-                    semtype.TRUTH_VALUE
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
                 ),
                 TypeNode(
-                    semtype.ENTITY,
-                    semtype.TRUTH_VALUE
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
                 )
             )
         ), concise=True)
