@@ -12,167 +12,213 @@ from lark.exceptions import LarkError
 class FormulaParseTest(unittest.TestCase):
     def test_parsing_symbol(self):
         tree = parse_formula('a')
-        self.assertEqual(tree, VarNode('a'))
+        self.assertTupleEqual(tree, VarNode('a'))
 
     def test_parsing_long_symbol(self):
         tree = parse_formula('s8DVY_BUvybJH-VDNS\'JhjS')
-        self.assertEqual(tree, VarNode('s8DVY_BUvybJH-VDNS\'JhjS'))
+        self.assertTupleEqual(tree, VarNode('s8DVY_BUvybJH-VDNS\'JhjS'))
 
     def test_parsing_conjunction(self):
         tree = parse_formula('a & a\'')
-        self.assertEqual(tree, AndNode(VarNode('a'), VarNode('a\'')))
+        self.assertTupleEqual(tree, AndNode(VarNode('a'), VarNode('a\'')))
 
     def test_parsing_multiple_conjunction(self):
         tree = parse_formula('a & b & c')
-        self.assertEqual(tree, AndNode(
-            VarNode('a'),
+        self.assertTupleEqual(
+            tree,
             AndNode(
-                VarNode('b'),
-                VarNode('c')
+                VarNode('a'),
+                AndNode(
+                    VarNode('b'),
+                    VarNode('c')
+                )
             )
-        ))
+        )
 
     def test_parsing_disjunction(self):
         tree = parse_formula('b | b0')
-        self.assertEqual(tree, OrNode(VarNode('b'), VarNode('b0')))
+        self.assertTupleEqual(tree, OrNode(VarNode('b'), VarNode('b0')))
 
     def test_parsing_multi_disjunction(self):
         tree = parse_formula('a | b | c')
-        self.assertEqual(tree, OrNode(
-            VarNode('a'),
+        self.assertTupleEqual(
+            tree,
             OrNode(
-                VarNode('b'),
-                VarNode('c')
+                VarNode('a'),
+                OrNode(
+                    VarNode('b'),
+                    VarNode('c')
+                )
             )
-        ))
+        )
 
     def test_parsing_implication(self):
         tree = parse_formula('a -> b')
-        self.assertEqual(tree, IfNode(VarNode('a'), VarNode('b')))
+        self.assertTupleEqual(tree, IfNode(VarNode('a'), VarNode('b')))
 
     def test_parsing_multi_implication(self):
         tree = parse_formula('a -> b -> c')
-        self.assertEqual(tree, IfNode(
-            VarNode('a'),
+        self.assertTupleEqual(
+            tree,
             IfNode(
-                VarNode('b'),
-                VarNode('c')
+                VarNode('a'),
+                IfNode(
+                    VarNode('b'),
+                    VarNode('c')
+                )
             )
-        ))
+        )
 
     def test_parsing_precedence(self):
         tree = parse_formula('x & y | z -> m')
-        self.assertEqual(tree, IfNode(
-            OrNode(
-                AndNode(VarNode('x'), VarNode('y')),
-                VarNode('z')
-            ),
-            VarNode('m')
-        ))
+        self.assertTupleEqual(
+            tree,
+            IfNode(
+                OrNode(
+                    AndNode(VarNode('x'), VarNode('y')),
+                    VarNode('z')
+                ),
+                VarNode('m')
+            )
+        )
 
     def test_parsing_precedence2(self):
         tree = parse_formula('x | y -> m & z')
-        self.assertEqual(tree, IfNode(
-            OrNode(
-                VarNode('x'),
-                VarNode('y'),
-            ),
-            AndNode(
-                VarNode('m'),
-                VarNode('z')
+        self.assertTupleEqual(
+            tree,
+            IfNode(
+                OrNode(
+                    VarNode('x'),
+                    VarNode('y'),
+                ),
+                AndNode(
+                    VarNode('m'),
+                    VarNode('z')
+                )
             )
-        ))
+        )
 
     def test_parsing_brackets(self):
         tree = parse_formula('[x | y] & z')
-        self.assertEqual(tree, AndNode(
-            OrNode(VarNode('x'), VarNode('y')),
-            VarNode('z')
-        ))
+        self.assertTupleEqual(
+            tree,
+            AndNode(
+                OrNode(VarNode('x'), VarNode('y')),
+                VarNode('z')
+            )
+        )
 
     def test_parsing_lambda(self):
         tree = parse_formula('Lx.Ly.[x & y]')
-        self.assertEqual(tree, LambdaNode('x',
-            LambdaNode('y',
-                AndNode(VarNode('x'), VarNode('y'))
+        self.assertTupleEqual(
+            tree,
+            LambdaNode(
+                'x',
+                LambdaNode(
+                    'y',
+                    AndNode(VarNode('x'), VarNode('y'))
+                )
             )
-        ))
+        )
 
     def test_parsing_lambda2(self):
         tree = parse_formula('L x.L y.[x & y]')
-        self.assertEqual(tree, LambdaNode('x',
-            LambdaNode('y',
-                AndNode(VarNode('x'), VarNode('y'))
+        self.assertEqual(
+            tree,
+            LambdaNode(
+                'x',
+                LambdaNode(
+                    'y',
+                    AndNode(VarNode('x'), VarNode('y'))
+                )
             )
-        ))
+        )
 
     def test_parsing_call(self):
         tree = parse_formula('Happy(x)')
-        self.assertEqual(tree, CallNode(VarNode('Happy'), VarNode('x')))
+        self.assertTupleEqual(tree, CallNode(VarNode('Happy'), VarNode('x')))
 
     def test_parsing_call_with_several_args(self):
         tree = parse_formula('Between(x, y & z, [Capital(france)])')
-        self.assertEqual(tree, CallNode(
+        self.assertTupleEqual(
+            tree,
             CallNode(
                 CallNode(
-                    VarNode('Between'),
-                    VarNode('x')
+                    CallNode(
+                        VarNode('Between'),
+                        VarNode('x')
+                    ),
+                    AndNode(VarNode('y'), VarNode('z')),
                 ),
-                AndNode(VarNode('y'), VarNode('z')),
-            ),
-            CallNode(VarNode('Capital'), VarNode('france')),
-        ))
+                CallNode(VarNode('Capital'), VarNode('france')),
+            )
+        )
 
     def test_parsing_call_with_lambda(self):
         tree = parse_formula('(Lx.x)(j)')
-        self.assertEqual(tree, CallNode(
-            LambdaNode('x', VarNode('x')),
-            VarNode('j')
-        ))
+        self.assertTupleEqual(
+            tree,
+            CallNode(
+                LambdaNode('x', VarNode('x')),
+                VarNode('j')
+            )
+        )
 
     def test_parsing_call_with_multiple_lambdas(self):
         tree = parse_formula('((Lx.Ly.x & y) (a)) (b)')
-        self.assertEqual(tree, CallNode(
+        self.assertTupleEqual(
+            tree,
             CallNode(
-                LambdaNode(
-                    'x',
+                CallNode(
                     LambdaNode(
-                        'y',
-                        AndNode(VarNode('x'), VarNode('y'))
-                    )
+                        'x',
+                        LambdaNode('y', AndNode(VarNode('x'), VarNode('y')))
+                    ),
+                    VarNode('a')
                 ),
-                VarNode('a')
-            ),
-            VarNode('b')
-        ))
+                VarNode('b')
+            )
+        )
 
     def test_parsing_forall(self):
         tree = parse_formula('Ax.x & y')
-        self.assertEqual(tree, AllNode(
-            'x',
-            AndNode(VarNode('x'), VarNode('y')),
-        ))
+        self.assertTupleEqual(
+            tree,
+            AllNode(
+                'x',
+                AndNode(VarNode('x'), VarNode('y')),
+            )
+        )
 
     def test_parsing_forall2(self):
         tree = parse_formula('A x.x & y')
-        self.assertEqual(tree, AllNode(
-            'x',
-            AndNode(VarNode('x'), VarNode('y')),
-        ))
+        self.assertTupleEqual(
+            tree,
+            AllNode(
+                'x',
+                AndNode(VarNode('x'), VarNode('y')),
+            )
+        )
 
     def test_parsing_exists(self):
         tree = parse_formula('Ex.x | y')
-        self.assertEqual(tree, ExistsNode(
-            'x',
-            OrNode(VarNode('x'), VarNode('y')),
-        ))
+        self.assertTupleEqual(
+            tree,
+            ExistsNode(
+                'x',
+                OrNode(VarNode('x'), VarNode('y')),
+            )
+        )
 
     def test_parsing_exists2(self):
         tree = parse_formula('E x.x | y')
-        self.assertEqual(tree, ExistsNode(
-            'x',
-            OrNode(VarNode('x'), VarNode('y')),
-        ))
+        self.assertTupleEqual(
+            tree,
+            ExistsNode(
+                'x',
+                OrNode(VarNode('x'), VarNode('y')),
+            )
+        )
 
 
 class FormulaParseErrorTest(unittest.TestCase):
@@ -214,45 +260,51 @@ class TypeParseTest(unittest.TestCase):
 
     def test_parsing_compound_type(self):
         tree = parse_type('<e, t>')
-        self.assertEqual(tree, TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE))
+        self.assertTupleEqual(tree, TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE))
 
     def test_parsing_abbreviated_compound_types(self):
         tree = parse_type('et')
-        self.assertEqual(tree, TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE))
+        self.assertTupleEqual(tree, TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE))
         tree = parse_type('vt')
-        self.assertEqual(tree, TypeNode(TYPE_EVENT, TYPE_TRUTH_VALUE))
+        self.assertTupleEqual(tree, TypeNode(TYPE_EVENT, TYPE_TRUTH_VALUE))
 
     def test_parsing_big_compound_type(self):
         tree = parse_type('<<e, t>, <e, <e, t>>>')
-        self.assertEqual(tree, TypeNode(
+        self.assertTupleEqual(
+            tree,
             TypeNode(
-                TYPE_ENTITY,
-                TYPE_TRUTH_VALUE
-            ),
-            TypeNode(
-                TYPE_ENTITY,
                 TypeNode(
                     TYPE_ENTITY,
                     TYPE_TRUTH_VALUE
+                ),
+                TypeNode(
+                    TYPE_ENTITY,
+                    TypeNode(
+                        TYPE_ENTITY,
+                        TYPE_TRUTH_VALUE
+                    )
                 )
             )
-        ))
+        )
 
     def test_parsing_big_compound_type_with_abbreviations(self):
         tree = parse_type('<et, <e, et>>')
-        self.assertEqual(tree, TypeNode(
+        self.assertTupleEqual(
+            tree,
             TypeNode(
-                TYPE_ENTITY,
-                TYPE_TRUTH_VALUE
-            ),
-            TypeNode(
-                TYPE_ENTITY,
                 TypeNode(
                     TYPE_ENTITY,
                     TYPE_TRUTH_VALUE
+                ),
+                TypeNode(
+                    TYPE_ENTITY,
+                    TypeNode(
+                        TYPE_ENTITY,
+                        TYPE_TRUTH_VALUE
+                    )
                 )
             )
-        ))
+        )
 
 
 class TypeParseErrorTest(unittest.TestCase):
@@ -311,19 +363,21 @@ class UnparseFormulaTest(unittest.TestCase):
         self.assertEqual(unparsed, 'a -> b')
 
     def test_unparse_lambda(self):
-        unparsed = unparse_formula(LambdaNode('x',
-            AndNode(VarNode('a'), VarNode('x'))
-        ))
+        unparsed = unparse_formula(
+            LambdaNode('x', AndNode(VarNode('a'), VarNode('x')))
+        )
         self.assertEqual(unparsed, 'Lx.a & x')
 
     def test_unparse_call(self):
-        unparsed = unparse_formula(CallNode(
+        unparsed = unparse_formula(
             CallNode(
-                VarNode('P'),
-                AndNode(VarNode('a'), VarNode('b'))
-            ),
-            LambdaNode('x', VarNode('x'))
-        ))
+                CallNode(
+                    VarNode('P'),
+                    AndNode(VarNode('a'), VarNode('b'))
+                ),
+                LambdaNode('x', VarNode('x'))
+            )
+        )
         self.assertEqual(unparsed, 'P(a & b, Lx.x)')
 
     def test_unparse_call_one_arg(self):
@@ -331,14 +385,14 @@ class UnparseFormulaTest(unittest.TestCase):
         self.assertEqual(unparsed, 'P(x)')
 
     def test_unparse_forall(self):
-        unparsed = unparse_formula(AllNode('x',
-            CallNode(VarNode('P'), VarNode('x')))
+        unparsed = unparse_formula(
+            AllNode('x', CallNode(VarNode('P'), VarNode('x')))
         )
         self.assertEqual(unparsed, 'Ax.P(x)')
 
     def test_unparse_exists(self):
-        unparsed = unparse_formula(ExistsNode('x',
-            CallNode(VarNode('P'), VarNode('x')))
+        unparsed = unparse_formula(
+            ExistsNode('x', CallNode(VarNode('P'), VarNode('x')))
         )
         self.assertEqual(unparsed, 'Ex.P(x)')
 
@@ -357,26 +411,27 @@ class UnparseTypeTest(unittest.TestCase):
         self.assertEqual(unparsed, 't')
 
     def test_unparse_recursive_type(self):
-        unparsed = unparse_type(TypeNode(
-            TYPE_ENTITY,
-            TYPE_TRUTH_VALUE
-        ))
+        unparsed = unparse_type(
+            TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+        )
         self.assertEqual(unparsed, '<e, t>')
 
     def test_unparse_deeply_recursive_type(self):
-        unparsed = unparse_type(TypeNode(
-            TYPE_EVENT,
+        unparsed = unparse_type(
             TypeNode(
+                TYPE_EVENT,
                 TypeNode(
-                    TYPE_ENTITY,
-                    TYPE_TRUTH_VALUE
-                ),
-                TypeNode(
-                    TYPE_ENTITY,
-                    TYPE_TRUTH_VALUE
+                    TypeNode(
+                        TYPE_ENTITY,
+                        TYPE_TRUTH_VALUE
+                    ),
+                    TypeNode(
+                        TYPE_ENTITY,
+                        TYPE_TRUTH_VALUE
+                    )
                 )
             )
-        ))
+        )
         self.assertEqual(unparsed, '<v, <<e, t>, <e, t>>>')
 
     def test_concisely_unparse_atomic_types(self):
@@ -385,24 +440,27 @@ class UnparseTypeTest(unittest.TestCase):
         self.assertEqual(unparse_type(TYPE_TRUTH_VALUE, concise=True), 't')
 
     def test_concisely_unparse_recursive_type(self):
-        unparsed = unparse_type(TypeNode(
-            TYPE_ENTITY,
-            TYPE_TRUTH_VALUE
-        ), concise=True)
+        unparsed = unparse_type(
+            TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE),
+            concise=True
+        )
         self.assertEqual(unparsed, 'et')
 
     def test_concisely_unparse_deeply_recursive_type(self):
-        unparsed = unparse_type(TypeNode(
-            TYPE_EVENT,
+        unparsed = unparse_type(
             TypeNode(
+                TYPE_EVENT,
                 TypeNode(
-                    TYPE_ENTITY,
-                    TYPE_TRUTH_VALUE
-                ),
-                TypeNode(
-                    TYPE_ENTITY,
-                    TYPE_TRUTH_VALUE
+                    TypeNode(
+                        TYPE_ENTITY,
+                        TYPE_TRUTH_VALUE
+                    ),
+                    TypeNode(
+                        TYPE_ENTITY,
+                        TYPE_TRUTH_VALUE
+                    )
                 )
-            )
-        ), concise=True)
+            ),
+            concise=True
+        )
         self.assertEqual(unparsed, '<v, <et, et>>')

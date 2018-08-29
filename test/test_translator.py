@@ -30,9 +30,12 @@ test_lexicon = {
       TYPE_ET
   ),
   "every": LexiconEntry(
-      LambdaNode('P',
-          LambdaNode('Q',
-              AllNode('x',
+      LambdaNode(
+          'P',
+          LambdaNode(
+              'Q',
+              AllNode(
+                  'x',
                   IfNode(
                       CallNode(VarNode('P'), VarNode('x')),
                       CallNode(VarNode('Q'), VarNode('x'))
@@ -56,7 +59,7 @@ test_lexicon = {
 class TranslatorTest(unittest.TestCase):
     def test_is_good(self):
         tree = translate_sentence('is good', test_lexicon)
-        self.assertEqual(
+        self.assertTupleEqual(
             tree.denotation,
             LambdaNode(
                 'x',
@@ -67,7 +70,7 @@ class TranslatorTest(unittest.TestCase):
 
     def test_john_is_good(self):
         tree = translate_sentence('John is good', test_lexicon)
-        self.assertEqual(
+        self.assertTupleEqual(
             tree.denotation,
             CallNode(VarNode('Good'), VarNode('j'))
         )
@@ -75,7 +78,7 @@ class TranslatorTest(unittest.TestCase):
 
     def test_john_is_bad(self):
         tree = translate_sentence('John is bad', test_lexicon)
-        self.assertEqual(
+        self.assertTupleEqual(
             tree.denotation,
             CallNode(VarNode('Bad'), VarNode('j'))
         )
@@ -114,21 +117,21 @@ class CombinerTest(unittest.TestCase):
     def test_saturate_predicate(self):
         self.assertTrue(can_combine(self.pred, self.entity))
         saturated = combine(self.pred, self.entity)
-        self.assertEqual(saturated.type, TYPE_TRUTH_VALUE)
-        self.assertEqual(
+        self.assertTupleEqual(
             saturated.denotation,
             CallNode(self.pred.denotation, self.entity.denotation)
         )
+        self.assertEqual(saturated.type, TYPE_TRUTH_VALUE)
 
     def test_combine_every_child(self):
         every = test_lexicon['every']
         child = test_lexicon['child']
         every_child = combine(every, child)
-        self.assertEqual(every_child.type, TypeNode(TYPE_ET, TYPE_TRUTH_VALUE))
-        self.assertEqual(
+        self.assertTupleEqual(
             every_child.denotation,
             CallNode(every.denotation, child.denotation)
         )
+        self.assertEqual(every_child.type, TypeNode(TYPE_ET, TYPE_TRUTH_VALUE))
 
     def test_can_combine_is_good(self):
         self.assertTrue(can_combine(test_lexicon['is'], test_lexicon['good']))
@@ -142,12 +145,13 @@ class CombinerTest(unittest.TestCase):
 class ReplacerTest(unittest.TestCase):
     def test_simple_replace_variable(self):
         replaced = replace_variable(VarNode('x'), 'x', VarNode('y'))
-        self.assertEqual(replaced, VarNode('y'))
+        self.assertTupleEqual(replaced, VarNode('y'))
 
     def test_replace_variable_in_and_or(self):
         tree = AndNode(OrNode(VarNode('x'), VarNode('y')), VarNode('z'))
         replaced = replace_variable(tree, 'x', VarNode('x\''))
-        self.assertEqual(replaced,
+        self.assertTupleEqual(
+            replaced,
             AndNode(
                 OrNode(VarNode('x\''), VarNode('y')),
                 VarNode('z')
@@ -157,7 +161,7 @@ class ReplacerTest(unittest.TestCase):
     def test_replace_predicate(self):
         tree = CallNode(VarNode('P'), VarNode('x'))
         replaced = replace_variable(tree, 'P', VarNode('Good'))
-        self.assertEqual(replaced, CallNode(VarNode('Good'), VarNode('x')))
+        self.assertTupleEqual(replaced, CallNode(VarNode('Good'), VarNode('x')))
 
     def test_replace_variable_in_quantifiers(self):
         tree = AllNode('x',
@@ -170,15 +174,19 @@ class ReplacerTest(unittest.TestCase):
             )
         )
         replaced = replace_variable(tree, 'b', VarNode('bbb'))
-        self.assertEqual(replaced, AllNode('x',
-            OrNode(
-                AndNode(
-                    AllNode('b', VarNode('b')),
-                    ExistsNode('b', VarNode('b')),
-                ),
-                ExistsNode('y', VarNode('bbb'))
+        self.assertTupleEqual(
+            replaced,
+            AllNode(
+                'x',
+                OrNode(
+                    AndNode(
+                        AllNode('b', VarNode('b')),
+                        ExistsNode('b', VarNode('b')),
+                    ),
+                    ExistsNode('y', VarNode('bbb'))
+                )
             )
-        ))
+        )
 
 
     def test_recursive_replace_variable(self):
@@ -193,33 +201,40 @@ class ReplacerTest(unittest.TestCase):
             AndNode(VarNode('x'), VarNode('y'))
         )
         tree = replace_variable(tree, 'x', VarNode('j'))
-        self.assertEqual(tree, CallNode(
+        self.assertTupleEqual(
+            tree,
             CallNode(
                 CallNode(
-                    VarNode('BFP'),
-                    VarNode('j')
+                    CallNode(
+                        VarNode('BFP'),
+                        VarNode('j')
+                    ),
+                    LambdaNode('x', VarNode('x'))
                 ),
-                LambdaNode('x', VarNode('x'))
-            ),
-            AndNode(VarNode('j'), VarNode('y'))
-        ))
+                AndNode(VarNode('j'), VarNode('y'))
+            )
+        )
 
 
 class SimplifierTest(unittest.TestCase):
     def test_simplify_call(self):
-        tree = simplify_formula(CallNode(
-            LambdaNode('x', VarNode('x')),
-            VarNode('j')
-        ))
-        self.assertEqual(tree, VarNode('j'))
+        tree = simplify_formula(
+            CallNode(
+                LambdaNode('x', VarNode('x')),
+                VarNode('j')
+            )
+        )
+        self.assertTupleEqual(tree, VarNode('j'))
 
     def test_simplify_nested_call(self):
         # (Lx.Ly.x & y)(a)(b) -> a & b
         tree = simplify_formula(
             CallNode(
                 CallNode(
-                    LambdaNode('x',
-                        LambdaNode('y',
+                    LambdaNode(
+                        'x',
+                        LambdaNode(
+                            'y',
                             AndNode(VarNode('x'), VarNode('y'))
                         )
                     ),
@@ -228,7 +243,7 @@ class SimplifierTest(unittest.TestCase):
                 VarNode('b')
             )
         )
-        self.assertEqual(tree, AndNode(VarNode('a'), VarNode('b')))
+        self.assertTupleEqual(tree, AndNode(VarNode('a'), VarNode('b')))
 
     def test_simplify_call_with_lambda_arg(self):
         # (LP.P(x))(Lx.x | a) -> x | a
@@ -244,7 +259,7 @@ class SimplifierTest(unittest.TestCase):
                 )
             )
         )
-        self.assertEqual(tree, OrNode(VarNode('x'), VarNode('a')))
+        self.assertTupleEqual(tree, OrNode(VarNode('x'), VarNode('a')))
 
     def test_simplify_super_nested_call(self):
         # (LP.P(a, b))(Lx.Ly.x & y) -> a & b
@@ -263,7 +278,7 @@ class SimplifierTest(unittest.TestCase):
                 )
             )
         )
-        self.assertEqual(tree, AndNode(VarNode('a'), VarNode('b')))
+        self.assertTupleEqual(tree, AndNode(VarNode('a'), VarNode('b')))
 
     def test_simplify_every_child(self):
         # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
@@ -300,10 +315,16 @@ class LexiconLoaderTest(unittest.TestCase):
                 't': 'et',
             },
         })
-        self.assertDictEqual(lexicon, {
-            'John': LexiconEntry(parse_formula('j'), parse_type('e')),
-            'good': LexiconEntry(parse_formula('Lx.Good(x)'), parse_type('et')),
-        })
+        self.assertDictEqual(
+            lexicon,
+            {
+                'John': LexiconEntry(parse_formula('j'), parse_type('e')),
+                'good': LexiconEntry(
+                    parse_formula('Lx.Good(x)'),
+                    parse_type('et')
+                ),
+            }
+        )
 
     def test_missing_denotation_field(self):
         with self.assertRaisesRegex(LexiconError, r'.*John.*'):
