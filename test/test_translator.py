@@ -8,8 +8,8 @@ from montague.formula import (
     TYPE_EVENT, TYPE_TRUTH_VALUE,
 )
 from montague.translator import (
-    LexiconEntry, TranslationError, can_combine, combine, load_lexicon,
-    replace_variable, simplify_formula, translate_sentence,
+    LexiconEntry, LexiconError, TranslationError, can_combine, combine,
+    load_lexicon, replace_variable, simplify_formula, translate_sentence,
 )
 
 
@@ -304,3 +304,19 @@ class LexiconLoaderTest(unittest.TestCase):
             'John': LexiconEntry(parse_formula('j'), parse_type('e')),
             'good': LexiconEntry(parse_formula('Lx.Good(x)'), parse_type('et')),
         })
+
+    def test_missing_denotation_field(self):
+        with self.assertRaisesRegex(LexiconError, r'.*John.*'):
+            load_lexicon({'John': {'t': 'e'}})
+
+    def test_missing_type_field(self):
+        with self.assertRaisesRegex(LexiconError, r'.*John.*'):
+            load_lexicon({'John': {'d': 'j'}})
+
+    def test_invalid_denotation_formula(self):
+        with self.assertRaisesRegex(LexiconError, r'.*John.*'):
+            load_lexicon({'John': {'d': '???', 't': 'e'}})
+
+    def test_invalid_type(self):
+        with self.assertRaisesRegex(LexiconError, r'.*John.*'):
+            load_lexicon({'John': {'d': 'j', 't': '???'}})

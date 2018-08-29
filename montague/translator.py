@@ -5,6 +5,8 @@ Version: August 2018
 """
 from collections import namedtuple
 
+from lark.exceptions import LarkError
+
 from .formula import (
     AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
     TypeNode, VarNode, parse_formula, parse_type
@@ -136,12 +138,28 @@ class TranslationError(Exception):
     pass
 
 
+class LexiconError(Exception):
+    """When the lexicon is ill-formatted."""
+    pass
+
+
 def load_lexicon(lexicon_json):
-    return {k: load_lexical_entry(v) for k, v in lexicon_json.items()}
+    return {k: load_lexical_entry(k, v) for k, v in lexicon_json.items()}
 
 
-def load_lexical_entry(entry_json):
-    return LexiconEntry(
-        parse_formula(entry_json['d']),
-        parse_type(entry_json['t'])
-    )
+def load_lexical_entry(key, value):
+    try:
+        denotation = parse_formula(value['d'])
+    except KeyError:
+        raise LexiconError(f'entry for {key} has no "d" field')
+    except LarkError as e:
+        raise LexiconError(f'could not parse denotation of {key} ({e})')
+
+    try:
+        type_ = parse_type(value['t'])
+    except KeyError:
+        raise LexiconError(f'entry for {key} has no "t" field')
+    except LarkError as e:
+        raise LexiconError(f'could not parse type of {key} ({e})')
+
+    return LexiconEntry(denotation, type_)
