@@ -71,28 +71,39 @@ def replace_variable(formula, variable, replacement):
             replace_variable(formula.left, variable, replacement),
             replace_variable(formula.right, variable, replacement)
         )
-    elif isinstance(formula, LambdaNode) and formula.parameter != variable:
-        return LambdaNode(
-            formula.parameter,
-            replace_variable(formula.body, variable, replacement)
-        )
+    elif isinstance(formula, LambdaNode):
+        if formula.parameter != variable:
+            return LambdaNode(
+                formula.parameter,
+                replace_variable(formula.body, variable, replacement)
+            )
+        else:
+            return formula
     elif isinstance(formula, CallNode):
         return CallNode(
             replace_variable(formula.caller, variable, replacement),
             replace_variable(formula.arg, variable, replacement)
         )
-    elif isinstance(formula, AllNode) and formula.symbol != variable:
-        return AllNode(
-            formula.symbol,
-            replace_variable(formula.body, variable, replacement)
-        )
-    elif isinstance(formula, ExistsNode) and formula.symbol != variable:
-        return ExistsNode(
-            formula.symbol,
-            replace_variable(formula.body, variable, replacement)
-        )
-    else:
+    elif isinstance(formula, AllNode):
+        if formula.symbol != variable:
+            return AllNode(
+                formula.symbol,
+                replace_variable(formula.body, variable, replacement)
+            )
+        else:
+            return formula
+    elif isinstance(formula, ExistsNode):
+        if formula.symbol != variable:
+            return ExistsNode(
+                formula.symbol,
+                replace_variable(formula.body, variable, replacement)
+            )
+        else:
+            return formula
+    elif isinstance(formula, VarNode):
         return formula
+    else:
+        raise Exception('Unhandled class', formula.__class__)
 
 
 def simplify_formula(tree):

@@ -147,9 +147,9 @@ class ReplacerTest(unittest.TestCase):
         )
 
     def test_replace_predicate(self):
-        tree = CallNode(VarNode('P'), [VarNode('x')])
+        tree = CallNode(VarNode('P'), VarNode('x'))
         replaced = replace_variable(tree, 'P', VarNode('Good'))
-        self.assertEqual(replaced, CallNode(VarNode('Good'), [VarNode('x')]))
+        self.assertEqual(replaced, CallNode(VarNode('Good'), VarNode('x')))
 
     def test_replace_variable_in_quantifiers(self):
         tree = AllNode('x',

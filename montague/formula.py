@@ -139,8 +139,10 @@ def unparse_formula(tree):
         return f'{unparse_formula(tree.left)} & {unparse_formula(tree.right)}'
     elif isinstance(tree, IfNode):
         return f'{unparse_formula(tree.left)} -> {unparse_formula(tree.right)}'
-    else:
+    elif isinstance(tree, VarNode):
         return tree.value
+    else:
+        raise Exception('Unhandled class', formula.__class__)
 
 
 def unparse_type(tree, *, concise=False):
