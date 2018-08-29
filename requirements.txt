@@ -1,0 +1,4 @@
+coverage==4.5.1
+lark-parser==0.6.4
+nose2==0.8.0
+six==1.11.0

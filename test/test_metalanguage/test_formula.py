@@ -2,93 +2,10 @@ import unittest
 
 from montague.metalanguage.formula import (
     AllNode, AndNode, CallNode, ExistsNode, LambdaNode, OrNode, VarNode,
-    parse_formula, tokenize_formula,
+    parse_formula,
 )
-from montague.metalanguage.utils import Token
 
-
-class TokenizeTest(unittest.TestCase):
-    def test_tokenize_symbol(self):
-        tokens = list(tokenize_formula('a'))
-        self.assertListEqual(tokens, [
-            Token('SYMBOL', 'a', 1, 0),
-        ])
-
-    def test_tokenize_multiple_symbols(self):
-        tokens = list(tokenize_formula('a\' b0 cccc'))
-        self.assertListEqual(tokens, [
-            Token('SYMBOL', 'a\'', 1, 0),
-            Token('SYMBOL', 'b0', 1, 3),
-            Token('SYMBOL', 'cccc', 1, 6),
-        ])
-
-    def test_tokenize_conjunction(self):
-        tokens = list(tokenize_formula('a&b'))
-        self.assertListEqual(tokens, [
-            Token('SYMBOL', 'a', 1, 0),
-            Token('AND', '&', 1, 1),
-            Token('SYMBOL', 'b', 1, 2),
-        ])
-
-    def test_tokenize_disjunction(self):
-        tokens = list(tokenize_formula('a|b'))
-        self.assertListEqual(tokens, [
-            Token('SYMBOL', 'a', 1, 0),
-            Token('OR', '|', 1, 1),
-            Token('SYMBOL', 'b', 1, 2),
-        ])
-
-    def test_tokenize_brackets(self):
-        tokens = list(tokenize_formula('[a]'))
-        self.assertListEqual(tokens, [
-            Token('LBRACKET', '[', 1, 0),
-            Token('SYMBOL', 'a', 1, 1),
-            Token('RBRACKET', ']', 1, 2),
-        ])
-
-    def test_tokenize_lambda_op(self):
-        tokens = list(tokenize_formula('L'))
-        self.assertListEqual(tokens, [
-            Token('LAMBDA', 'L', 1, 0),
-        ])
-
-    def test_tokenize_lambda(self):
-        tokens = list(tokenize_formula('Lx.x'))
-        self.assertListEqual(tokens, [
-            Token('LAMBDA', 'L', 1, 0),
-            Token('SYMBOL', 'x', 1, 1),
-            Token('DOT', '.', 1, 2),
-            Token('SYMBOL', 'x', 1, 3),
-        ])
-
-    def test_tokenize_parentheses(self):
-        tokens = list(tokenize_formula('()'))
-        self.assertListEqual(tokens, [
-            Token('LPAREN', '(', 1, 0),
-            Token('RPAREN', ')', 1, 1),
-        ])
-
-    def test_tokenize_comma(self):
-        tokens = list(tokenize_formula('a,b'))
-        self.assertListEqual(tokens, [
-            Token('SYMBOL', 'a', 1, 0),
-            Token('COMMA', ',', 1, 1),
-            Token('SYMBOL', 'b', 1, 2),
-        ])
-
-    def test_tokenize_keywords(self):
-        tokens = list(tokenize_formula('all exists'))
-        self.assertListEqual(tokens, [
-            Token('ALL', 'all', 1, 0),
-            Token('EXISTS', 'exists', 1, 4),
-        ])
-
-    def test_tokenize_almost_keywords(self):
-        tokens = list(tokenize_formula('all_ exists_'))
-        self.assertListEqual(tokens, [
-            Token('SYMBOL', 'all_', 1, 0),
-            Token('SYMBOL', 'exists_', 1, 5),
-        ])
+from lark.exceptions import LarkError
 
 
 class ParseTest(unittest.TestCase):
@@ -96,7 +13,7 @@ class ParseTest(unittest.TestCase):
         tree = parse_formula('a')
         self.assertEqual(tree, VarNode('a'))
 
-    def test_parsing_another_symbol(self):
+    def test_parsing_long_symbol(self):
         tree = parse_formula('s8DVY_BUvybJH-VDNS\'JhjS')
         self.assertEqual(tree, VarNode('s8DVY_BUvybJH-VDNS\'JhjS'))
 
@@ -137,6 +54,14 @@ class ParseTest(unittest.TestCase):
             )
         ))
 
+    def test_parsing_lambda2(self):
+        tree = parse_formula('L x.L y.[x & y]')
+        self.assertEqual(tree, LambdaNode('x',
+            LambdaNode('y',
+                AndNode(VarNode('x'), VarNode('y'))
+            )
+        ))
+
     def test_parsing_call(self):
         tree = parse_formula('Happy(x)')
         self.assertEqual(tree, CallNode('Happy', [VarNode('x')]))
@@ -157,14 +82,28 @@ class ParseTest(unittest.TestCase):
         ))
 
     def test_parsing_forall(self):
-        tree = parse_formula('all x.x & y')
+        tree = parse_formula('Ax.x & y')
+        self.assertEqual(tree, AllNode(
+            'x',
+            AndNode(VarNode('x'), VarNode('y')),
+        ))
+
+    def test_parsing_forall2(self):
+        tree = parse_formula('A x.x & y')
         self.assertEqual(tree, AllNode(
             'x',
             AndNode(VarNode('x'), VarNode('y')),
         ))
 
     def test_parsing_exists(self):
-        tree = parse_formula('exists x.x | y')
+        tree = parse_formula('Ex.x | y')
+        self.assertEqual(tree, ExistsNode(
+            'x',
+            OrNode(VarNode('x'), VarNode('y')),
+        ))
+
+    def test_parsing_exists2(self):
+        tree = parse_formula('E x.x | y')
         self.assertEqual(tree, ExistsNode(
             'x',
             OrNode(VarNode('x'), VarNode('y')),
@@ -173,19 +112,19 @@ class ParseTest(unittest.TestCase):
 
 class ParseErrorTest(unittest.TestCase):
     def test_missing_operand(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(LarkError):
             parse_formula('a | ')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(LarkError):
             parse_formula('b & ')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(LarkError):
             parse_formula('| a')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(LarkError):
             parse_formula('& b')
 
     def test_parsing_hanging_bracket(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(LarkError):
             parse_formula('[x | y')
 
     def test_lambda_missing_body(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(LarkError):
             parse_formula('Lx.')
