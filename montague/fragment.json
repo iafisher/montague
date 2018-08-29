@@ -14,5 +14,13 @@
   "good": {
     "d": "Lx.Good(x)",
     "t": "et"
-  }
+  },
+  "every": {
+    "d": "LQ.LP.Ax.Q(x) -> P(x)",
+    "t": "<et, <et, t>>"
+  },
+  "child": {
+    "d": "Lx.Child(x)",
+    "t": "et"
+   }
 }

@@ -1,8 +1,8 @@
 import unittest
 
 from montague.formula import (
-    AllNode, AndNode, CallNode, ExistsNode, LambdaNode, OrNode, TypeNode,
-    VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
+    AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
+    TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
     TYPE_TRUTH_VALUE, unparse_formula, unparse_type,
 )
 
@@ -26,18 +26,31 @@ class FormulaParseTest(unittest.TestCase):
         tree = parse_formula('b | b0')
         self.assertEqual(tree, OrNode(VarNode('b'), VarNode('b0')))
 
+    def test_parsing_implication(self):
+        tree = parse_formula('a -> b')
+        self.assertEqual(tree, IfNode(VarNode('a'), VarNode('b')))
+
     def test_parsing_precedence(self):
-        tree = parse_formula('x & y | z')
-        self.assertEqual(tree, OrNode(
-            AndNode(VarNode('x'), VarNode('y')),
-            VarNode('z')
+        tree = parse_formula('x & y | z -> m')
+        self.assertEqual(tree, IfNode(
+            OrNode(
+                AndNode(VarNode('x'), VarNode('y')),
+                VarNode('z')
+            ),
+            VarNode('m')
         ))
 
     def test_parsing_precedence2(self):
-        tree = parse_formula('x | y & z')
-        self.assertEqual(tree, OrNode(
-            VarNode('x'),
-            AndNode(VarNode('y'), VarNode('z'))
+        tree = parse_formula('x | y -> m & z')
+        self.assertEqual(tree, IfNode(
+            OrNode(
+                VarNode('x'),
+                VarNode('y'),
+            ),
+            AndNode(
+                VarNode('m'),
+                VarNode('z')
+            )
         ))
 
     def test_parsing_brackets(self):
@@ -241,6 +254,10 @@ class UnparseFormulaTest(unittest.TestCase):
     def test_unparse_or(self):
         unparsed = unparse_formula(OrNode(VarNode('a'), VarNode('b')))
         self.assertEqual(unparsed, 'a | b')
+
+    def test_unparse_if(self):
+        unparsed = unparse_formula(IfNode(VarNode('a'), VarNode('b')))
+        self.assertEqual(unparsed, 'a -> b')
 
     def test_unparse_lambda(self):
         unparsed = unparse_formula(LambdaNode('x',

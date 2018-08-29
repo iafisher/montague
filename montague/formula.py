@@ -13,6 +13,7 @@ from lark import Lark, Transformer
 VarNode = namedtuple('VarNode', 'value')
 AndNode = namedtuple('AndNode', ['left', 'right'])
 OrNode = namedtuple('OrNode', ['left', 'right'])
+IfNode = namedtuple('IfNode', ['left', 'right'])
 LambdaNode = namedtuple('LambdaNode', ['parameter', 'body'])
 CallNode = namedtuple('CallNode', ['symbol', 'args'])
 AllNode = namedtuple('AllNode', ['symbol', 'body'])
@@ -21,6 +22,9 @@ ExistsNode = namedtuple('ExistsNode', ['symbol', 'body'])
 
 class TreeToFormula(Transformer):
     def expr(self, matches):
+        return IfNode(matches[0], matches[2])
+
+    def ifterm(self, matches):
         return OrNode(matches[0], matches[2])
 
     def term(self, matches):
@@ -45,8 +49,9 @@ class TreeToFormula(Transformer):
 formula_parser = Lark('''
     ?start: expr
 
-    ?expr: term ( OR term )*
+    ?expr: ifterm ( IMPLIES ifterm )*
 
+    ?ifterm: term ( OR term )*
     ?term: factor ( AND factor )*
     ?factor: variable | "[" expr "]" | call | lambda_ | forall | exists
 
@@ -62,6 +67,7 @@ formula_parser = Lark('''
     SYMBOL: /[B-DF-KM-Za-z][A-Za-z0-9_'-]*/
     OR: "|"
     AND: "&"
+    IMPLIES: "->"
 
     %import common.WS
     %ignore WS
@@ -120,6 +126,8 @@ def unparse_formula(tree):
         return f'{unparse_formula(tree.left)} | {unparse_formula(tree.right)}'
     elif isinstance(tree, AndNode):
         return f'{unparse_formula(tree.left)} & {unparse_formula(tree.right)}'
+    elif isinstance(tree, IfNode):
+        return f'{unparse_formula(tree.left)} -> {unparse_formula(tree.right)}'
     else:
         return tree.value
 
