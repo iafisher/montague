@@ -100,9 +100,8 @@ class TranslatorTest(unittest.TestCase):
             translate_sentence('every John is good', test_lexicon)
 
     def test_translate_unknown_word(self):
-        with self.assertRaises(TranslationError) as cm:
+        with self.assertRaisesRegex(TranslationError, r'.*whorlious.*'):
             translate_sentence('John is whorlious', test_lexicon)
-        self.assertIn('whorlious', cm.exception.args[0])
 
 
 class CombinerTest(unittest.TestCase):
