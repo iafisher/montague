@@ -16,7 +16,7 @@
     "t": "et"
   },
   "every": {
-    "d": "LQ.LP.Ax.Q(x) -> P(x)",
+    "d": "LP.LQ.Ax.P(x) -> Q(x)",
     "t": "<et, <et, t>>"
   },
   "child": {

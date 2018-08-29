@@ -43,7 +43,7 @@ class TreeToFormula(Transformer):
         return ExistsNode(matches[0], matches[1])
 
     def call(self, matches):
-        return CallNode(matches[0], matches[1:])
+        return CallNode(VarNode(matches[0]), matches[1:])
 
 
 formula_parser = Lark('''
@@ -121,7 +121,7 @@ def unparse_formula(tree):
         return f'L{tree.parameter}.{unparse_formula(tree.body)}'
     elif isinstance(tree, CallNode):
         args = ', '.join(map(unparse_formula, tree.args))
-        return f'{tree.symbol}({args})'
+        return f'{unparse_formula(tree.symbol)}({args})'
     elif isinstance(tree, OrNode):
         return f'{unparse_formula(tree.left)} | {unparse_formula(tree.right)}'
     elif isinstance(tree, AndNode):

@@ -74,7 +74,7 @@ def replace_variable(formula, variable, replacement):
         )
     elif isinstance(formula, CallNode):
         return CallNode(
-            formula.symbol,
+            replace_variable(formula.symbol, variable, replacement),
             [replace_variable(a, variable, replacement) for a in formula.args]
         )
     elif isinstance(formula, AllNode) and formula.symbol != variable:
