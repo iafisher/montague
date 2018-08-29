@@ -9,7 +9,7 @@ from montague.formula import (
 )
 from montague.translator import (
     LexiconEntry, can_combine, combine, load_lexicon, replace_variable,
-    translate_sentence,
+    simplify_formula, translate_sentence,
 )
 
 
@@ -188,6 +188,29 @@ class ReplacerTest(unittest.TestCase):
             ),
             AndNode(VarNode('j'), VarNode('y'))
         ))
+
+
+class SimplifierTest(unittest.TestCase):
+    def test_simplify_call(self):
+        tree = simplify_formula(CallNode(
+            LambdaNode('x', VarNode('x')),
+            VarNode('j')
+        ))
+        self.assertEqual(tree, VarNode('j'))
+
+    def test_simplify_nested_call(self):
+        tree = simplify_formula(CallNode(
+            CallNode(
+                LambdaNode('x',
+                    LambdaNode('y',
+                        AndNode(VarNode('x'), VarNode('y'))
+                    )
+                ),
+                VarNode('a')
+            ),
+            VarNode('b')
+        ))
+        self.assertEqual(tree, AndNode(VarNode('a'), VarNode('b')))
 
 
 class LexiconLoaderTest(unittest.TestCase):

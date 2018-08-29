@@ -91,6 +91,20 @@ def replace_variable(formula, variable, replacement):
         return formula
 
 
+def simplify_formula(tree):
+    if isinstance(tree, CallNode) and not isinstance(tree.caller, VarNode):
+        caller = simplify_formula(tree.caller)
+        arg = simplify_formula(tree.arg)
+        if isinstance(caller, LambdaNode):
+            return replace_variable(caller.body, caller.parameter, arg)
+        else:
+            return CallNode(tree.caller, arg)
+    elif isinstance(tree, tuple):
+        return tree.__class__(*map(simplify_formula, tree))
+    else:
+        return tree
+
+
 class CombinationError(Exception):
     pass
 
