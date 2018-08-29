@@ -22,10 +22,10 @@ if __name__ == '__main__':
     )
 
     try:
-        with open(os.path.join(FILE_DIR, 'lexicon.json')) as f:
+        with open(os.path.join(FILE_DIR, 'fragment.json')) as f:
             lexicon = load_lexicon(json.load(f))
     except (FileNotFoundError, IOError):
-        sys.stderr.write('Error: failed to open lexicon.json\n')
+        sys.stderr.write('Error: failed to open fragment.json\n')
         sys.exit(1)
 
     while True:
