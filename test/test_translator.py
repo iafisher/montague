@@ -7,7 +7,8 @@ from montague.formula import (
     VarNode, parse_formula, parse_type, semtype,
 )
 from montague.translator import (
-    LexiconEntry, can_combine, combine, replace_variable, translate_sentence,
+    LexiconEntry, can_combine, combine, load_lexicon, replace_variable,
+    translate_sentence,
 )
 
 
@@ -125,3 +126,21 @@ class ReplacerTest(unittest.TestCase):
             LambdaNode('x', VarNode('x')),
             AndNode(VarNode('j'), VarNode('y')),
         ]))
+
+
+class LexiconLoaderTest(unittest.TestCase):
+    def test_load_lexicon(self):
+        lexicon = load_lexicon({
+            'John': {
+                'd': 'j',
+                't': 'e',
+            },
+            'good': {
+                'd': 'Lx.Good(x)',
+                't': 'et',
+            },
+        })
+        self.assertDictEqual(lexicon, {
+            'John': LexiconEntry(parse_formula('j'), parse_type('e')),
+            'good': LexiconEntry(parse_formula('Lx.Good(x)'), parse_type('et')),
+        })

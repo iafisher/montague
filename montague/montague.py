@@ -3,13 +3,31 @@
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: August 2018
 """
+import json
+import os
 import readline
+import sys
 
-from .formula import parse_formula
+from .formula import unparse_formula, unparse_type
+from .translator import load_lexicon, translate_sentence
+
+
+FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 if __name__ == '__main__':
-    print('Enter a formula to see its parse tree. Press Ctrl+C to quit.\n')
+    print(
+        'Enter a sentence to see its translation into logic.',
+        'Press Ctrl+C to quit.\n'
+    )
+
+    try:
+        with open(os.path.join(FILE_DIR, 'lexicon.json')) as f:
+            lexicon = load_lexicon(json.load(f))
+    except (FileNotFoundError, IOError):
+        sys.stderr.write('Error: failed to open lexicon.json\n')
+        sys.exit(1)
+
     while True:
         try:
             formula = input('>>> ')
@@ -18,8 +36,9 @@ if __name__ == '__main__':
             break
 
         try:
-            tree = parse_formula(formula)
-        except RuntimeError as e:
+            entry = translate_sentence(formula, lexicon)
+        except Exception as e:
             print('Error:', e)
         else:
-            print(tree)
+            print('Denotation:', unparse_formula(entry.denotation))
+            print('Type:', unparse_type(entry.type))

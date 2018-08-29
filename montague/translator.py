@@ -7,7 +7,7 @@ from collections import namedtuple
 
 from .formula import (
     AllNode, AndNode, CallNode, ExistsNode, LambdaNode, OrNode, TypeNode,
-    VarNode,
+    VarNode, parse_formula, parse_type
 )
 
 
@@ -93,3 +93,14 @@ def replace_variable(formula, variable, replacement):
 
 class CombinationError(Exception):
     pass
+
+
+def load_lexicon(lexicon_json):
+    return {k: load_lexical_entry(v) for k, v in lexicon_json.items()}
+
+
+def load_lexical_entry(entry_json):
+    return LexiconEntry(
+        parse_formula(entry_json['d']),
+        parse_type(entry_json['t'])
+    )
