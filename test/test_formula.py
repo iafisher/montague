@@ -108,28 +108,26 @@ class FormulaParseTest(unittest.TestCase):
 
     def test_parsing_call(self):
         tree = parse_formula('Happy(x)')
-        self.assertEqual(tree, CallNode(VarNode('Happy'), [VarNode('x')]))
-
-    def test_parsing_call_with_no_args(self):
-        tree = parse_formula('Happy()')
-        self.assertEqual(tree, CallNode(VarNode('Happy'), []))
+        self.assertEqual(tree, CallNode(VarNode('Happy'), VarNode('x')))
 
     def test_parsing_call_with_several_args(self):
         tree = parse_formula('Between(x, y & z, [Capital(france)])')
         self.assertEqual(tree, CallNode(
-            VarNode('Between'),
-            [
-                VarNode('x'),
+            CallNode(
+                CallNode(
+                    VarNode('Between'),
+                    VarNode('x')
+                ),
                 AndNode(VarNode('y'), VarNode('z')),
-                CallNode(VarNode('Capital'), [VarNode('france')]),
-            ]
+            ),
+            CallNode(VarNode('Capital'), VarNode('france')),
         ))
 
     def test_parsing_call_with_lambda(self):
         tree = parse_formula('(Lx.x)(j)')
         self.assertEqual(tree, CallNode(
             LambdaNode('x', VarNode('x')),
-            [VarNode('j')]
+            VarNode('j')
         ))
 
     def test_parsing_call_with_multiple_lambdas(self):
@@ -143,9 +141,9 @@ class FormulaParseTest(unittest.TestCase):
                         AndNode(VarNode('x'), VarNode('y'))
                     )
                 ),
-                [VarNode('a')]
+                VarNode('a')
             ),
-            [VarNode('b')]
+            VarNode('b')
         ))
 
     def test_parsing_forall(self):
@@ -319,29 +317,28 @@ class UnparseFormulaTest(unittest.TestCase):
         self.assertEqual(unparsed, 'Lx.a & x')
 
     def test_unparse_call(self):
-        unparsed = unparse_formula(CallNode(VarNode('P'), [
-            AndNode(VarNode('a'), VarNode('b')),
+        unparsed = unparse_formula(CallNode(
+            CallNode(
+                VarNode('P'),
+                AndNode(VarNode('a'), VarNode('b'))
+            ),
             LambdaNode('x', VarNode('x'))
-        ]))
+        ))
         self.assertEqual(unparsed, 'P(a & b, Lx.x)')
 
-    def test_unparse_call_no_args(self):
-        unparsed = unparse_formula(CallNode(VarNode('P'), []))
-        self.assertEqual(unparsed, 'P()')
-
     def test_unparse_call_one_arg(self):
-        unparsed = unparse_formula(CallNode(VarNode('P'), [VarNode('x')]))
+        unparsed = unparse_formula(CallNode(VarNode('P'), VarNode('x')))
         self.assertEqual(unparsed, 'P(x)')
 
     def test_unparse_forall(self):
         unparsed = unparse_formula(AllNode('x',
-            CallNode(VarNode('P'), [VarNode('x')]))
+            CallNode(VarNode('P'), VarNode('x')))
         )
         self.assertEqual(unparsed, 'Ax.P(x)')
 
     def test_unparse_exists(self):
         unparsed = unparse_formula(ExistsNode('x',
-            CallNode(VarNode('P'), [VarNode('x')]))
+            CallNode(VarNode('P'), VarNode('x')))
         )
         self.assertEqual(unparsed, 'Ex.P(x)')
 

@@ -15,7 +15,7 @@ AndNode = namedtuple('AndNode', ['left', 'right'])
 OrNode = namedtuple('OrNode', ['left', 'right'])
 IfNode = namedtuple('IfNode', ['left', 'right'])
 LambdaNode = namedtuple('LambdaNode', ['parameter', 'body'])
-CallNode = namedtuple('CallNode', ['symbol', 'args'])
+CallNode = namedtuple('CallNode', ['caller', 'arg'])
 AllNode = namedtuple('AllNode', ['symbol', 'body'])
 ExistsNode = namedtuple('ExistsNode', ['symbol', 'body'])
 
@@ -43,7 +43,10 @@ class TreeToFormula(Transformer):
         return ExistsNode(matches[0], matches[1])
 
     def call(self, matches):
-        return CallNode(matches[0], matches[1:])
+        func = CallNode(matches[0], matches[1])
+        for i in range(2, len(matches)):
+            func = CallNode(func, matches[i])
+        return func
 
 
 formula_parser = Lark('''
@@ -120,8 +123,16 @@ def unparse_formula(tree):
     elif isinstance(tree, LambdaNode):
         return f'L{tree.parameter}.{unparse_formula(tree.body)}'
     elif isinstance(tree, CallNode):
-        args = ', '.join(map(unparse_formula, tree.args))
-        return f'{unparse_formula(tree.symbol)}({args})'
+        args = [unparse_formula(tree.arg)]
+        func = tree.caller
+        while isinstance(func, CallNode):
+            args.append(unparse_formula(func.arg))
+            func = func.caller
+        args = ', '.join(reversed(args))
+        if isinstance(func, VarNode):
+            return f'{unparse_formula(func)}({args})'
+        else:
+            return f'({unparse_formula(func)})({args})'
     elif isinstance(tree, OrNode):
         return f'{unparse_formula(tree.left)} | {unparse_formula(tree.right)}'
     elif isinstance(tree, AndNode):

@@ -18,7 +18,7 @@ TYPE_ET = TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 test_lexicon = {
   "bad": LexiconEntry(
-      LambdaNode('x', CallNode(VarNode('Bad'), [VarNode('x')])),
+      LambdaNode('x', CallNode(VarNode('Bad'), VarNode('x'))),
       TYPE_ET
   ),
   "is": LexiconEntry(
@@ -26,7 +26,7 @@ test_lexicon = {
       TypeNode(TYPE_ET, TYPE_ET)
   ),
   "good": LexiconEntry(
-      LambdaNode('x', CallNode(VarNode('Good'), [VarNode('x')])),
+      LambdaNode('x', CallNode(VarNode('Good'), VarNode('x'))),
       TYPE_ET
   ),
   "every": LexiconEntry(
@@ -34,8 +34,8 @@ test_lexicon = {
           LambdaNode('Q',
               AllNode('x',
                   IfNode(
-                      CallNode(VarNode('P'), [VarNode('x')]),
-                      CallNode(VarNode('Q'), [VarNode('x')])
+                      CallNode(VarNode('P'), VarNode('x')),
+                      CallNode(VarNode('Q'), VarNode('x'))
                   )
               )
           )
@@ -46,7 +46,7 @@ test_lexicon = {
       )
   ),
   "child": LexiconEntry(
-      LambdaNode('x', CallNode(VarNode('Child'), [VarNode('x')])),
+      LambdaNode('x', CallNode(VarNode('Child'), VarNode('x'))),
       TYPE_ET
   ),
   "John": LexiconEntry(VarNode('j'), TYPE_ENTITY),
@@ -58,10 +58,7 @@ class TranslatorTest(unittest.TestCase):
         tree = translate_sentence('is good', test_lexicon)
         self.assertEqual(tree, LexiconEntry(
             LambdaNode('x',
-                CallNode(
-                    VarNode('Good'),
-                    [VarNode('x')]
-                )
+                CallNode(VarNode('Good'), VarNode('x'))
             ),
             TYPE_ET
         ))
@@ -69,20 +66,14 @@ class TranslatorTest(unittest.TestCase):
     def test_john_is_good(self):
         tree = translate_sentence('John is good', test_lexicon)
         self.assertEqual(tree, LexiconEntry(
-            CallNode(
-                VarNode('Good'),
-                [VarNode('j')]
-            ),
+            CallNode(VarNode('Good'), VarNode('j')),
             TYPE_TRUTH_VALUE
         ))
 
     def test_john_is_bad(self):
         tree = translate_sentence('John is bad', test_lexicon)
         self.assertEqual(tree, LexiconEntry(
-            CallNode(
-                VarNode('Bad'),
-                [VarNode('j')]
-            ),
+            CallNode(VarNode('Bad'), VarNode('j')),
             TYPE_TRUTH_VALUE
         ))
 
@@ -93,8 +84,8 @@ class TranslatorTest(unittest.TestCase):
             LambdaNode('Q',
                 AllNode('x',
                     IfNode(
-                        CallNode(VarNode('child'), [VarNode('x')]),
-                        CallNode(VarNode('Q'), [VarNode('x')])
+                        CallNode(VarNode('child'), VarNode('x')),
+                        CallNode(VarNode('Q'), VarNode('x'))
                     )
                 )
             ),
@@ -115,7 +106,7 @@ class CombinerTest(unittest.TestCase):
         self.assertEqual(saturated.type, TYPE_TRUTH_VALUE)
         self.assertEqual(
             saturated.denotation,
-            CallNode(VarNode('P'), [VarNode('me')])
+            CallNode(VarNode('P'), VarNode('me'))
         )
 
     def test_can_combine_is_good(self):
@@ -176,17 +167,27 @@ class ReplacerTest(unittest.TestCase):
 
 
     def test_recursive_replace_variable(self):
-        tree = CallNode(VarNode('BFP'), [
-            VarNode('x'),
-            LambdaNode('x', VarNode('x')),  # This 'x' should not be replaced.
-            AndNode(VarNode('x'), VarNode('y')),
-        ])
+        tree = CallNode(
+            CallNode(
+                CallNode(
+                    VarNode('BFP'),
+                    VarNode('x')
+                ),
+                LambdaNode('x', VarNode('x'))  # This should not be replaced.
+            ),
+            AndNode(VarNode('x'), VarNode('y'))
+        )
         tree = replace_variable(tree, 'x', VarNode('j'))
-        self.assertEqual(tree, CallNode(VarNode('BFP'), [
-            VarNode('j'),
-            LambdaNode('x', VarNode('x')),
-            AndNode(VarNode('j'), VarNode('y')),
-        ]))
+        self.assertEqual(tree, CallNode(
+            CallNode(
+                CallNode(
+                    VarNode('BFP'),
+                    VarNode('j')
+                ),
+                LambdaNode('x', VarNode('x'))
+            ),
+            AndNode(VarNode('j'), VarNode('y'))
+        ))
 
 
 class LexiconLoaderTest(unittest.TestCase):
