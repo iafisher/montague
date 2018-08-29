@@ -115,3 +115,37 @@ letter_to_type = {
     'v': semtype.EVENT,
     't': semtype.TRUTH_VALUE
 }
+
+
+type_to_letter = {v: k for k, v in letter_to_type.items()}
+
+
+def unparse_formula(tree):
+    if isinstance(tree, ExistsNode):
+        return f'E{tree.symbol}.{unparse_formula(tree.body)}'
+    elif isinstance(tree, AllNode):
+        return f'A{tree.symbol}.{unparse_formula(tree.body)}'
+    elif isinstance(tree, LambdaNode):
+        return f'L{tree.parameter}.{unparse_formula(tree.body)}'
+    elif isinstance(tree, CallNode):
+        args = ', '.join(map(unparse_formula, tree.args))
+        return f'{tree.symbol}({args})'
+    elif isinstance(tree, OrNode):
+        return f'{unparse_formula(tree.left)} | {unparse_formula(tree.right)}'
+    elif isinstance(tree, AndNode):
+        return f'{unparse_formula(tree.left)} & {unparse_formula(tree.right)}'
+    else:
+        return tree.value
+
+
+def unparse_type(tree, *, concise=False):
+    if isinstance(tree, TypeNode):
+        if concise and isinstance(tree.left, semtype) \
+            and isinstance(tree.right, semtype):
+            return type_to_letter[tree.left] + type_to_letter[tree.right]
+        else:
+            left = unparse_type(tree.left, concise=concise)
+            right = unparse_type(tree.right, concise=concise)
+            return f'<{left}, {right}>'
+    else:
+        return type_to_letter[tree]

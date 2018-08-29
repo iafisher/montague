@@ -2,7 +2,7 @@ import unittest
 
 from montague.formula import (
     AllNode, AndNode, CallNode, ExistsNode, LambdaNode, OrNode, TypeNode,
-    VarNode, parse_formula, parse_type, semtype,
+    VarNode, parse_formula, parse_type, semtype, unparse_formula, unparse_type,
 )
 
 from lark.exceptions import LarkError
@@ -194,3 +194,113 @@ class TypeParseErrorTest(unittest.TestCase):
     def test_invalid_letter(self):
         with self.assertRaises(LarkError):
             parse_type('b')
+
+
+class UnparseFormulaTest(unittest.TestCase):
+    def test_unparse_variable(self):
+        unparsed = unparse_formula(VarNode('a'))
+        self.assertEqual(unparsed, 'a')
+
+    def test_unparse_and(self):
+        unparsed = unparse_formula(AndNode(VarNode('a'), VarNode('b')))
+        self.assertEqual(unparsed, 'a & b')
+
+    def test_unparse_or(self):
+        unparsed = unparse_formula(OrNode(VarNode('a'), VarNode('b')))
+        self.assertEqual(unparsed, 'a | b')
+
+    def test_unparse_lambda(self):
+        unparsed = unparse_formula(LambdaNode('x',
+            AndNode(VarNode('a'), VarNode('x'))
+        ))
+        self.assertEqual(unparsed, 'Lx.a & x')
+
+    def test_unparse_call(self):
+        unparsed = unparse_formula(CallNode('P', [
+            AndNode(VarNode('a'), VarNode('b')),
+            LambdaNode('x', VarNode('x'))
+        ]))
+        self.assertEqual(unparsed, 'P(a & b, Lx.x)')
+
+    def test_unparse_call_no_args(self):
+        unparsed = unparse_formula(CallNode('P', []))
+        self.assertEqual(unparsed, 'P()')
+
+    def test_unparse_call_one_arg(self):
+        unparsed = unparse_formula(CallNode('P', [VarNode('x')]))
+        self.assertEqual(unparsed, 'P(x)')
+
+    def test_unparse_forall(self):
+        unparsed = unparse_formula(AllNode('x', CallNode('P', [VarNode('x')])))
+        self.assertEqual(unparsed, 'Ax.P(x)')
+
+    def test_unparse_exists(self):
+        unparsed = unparse_formula(ExistsNode('x',
+            CallNode('P', [VarNode('x')]))
+        )
+        self.assertEqual(unparsed, 'Ex.P(x)')
+
+
+class UnparseTypeTest(unittest.TestCase):
+    def test_unparse_entity(self):
+        unparsed = unparse_type(semtype.ENTITY)
+        self.assertEqual(unparsed, 'e')
+
+    def test_unparse_event(self):
+        unparsed = unparse_type(semtype.EVENT)
+        self.assertEqual(unparsed, 'v')
+
+    def test_unparse_truth(self):
+        unparsed = unparse_type(semtype.TRUTH_VALUE)
+        self.assertEqual(unparsed, 't')
+
+    def test_unparse_recursive_type(self):
+        unparsed = unparse_type(TypeNode(
+            semtype.ENTITY,
+            semtype.TRUTH_VALUE
+        ))
+        self.assertEqual(unparsed, '<e, t>')
+
+    def test_unparse_deeply_recursive_type(self):
+        unparsed = unparse_type(TypeNode(
+            semtype.EVENT,
+            TypeNode(
+                TypeNode(
+                    semtype.ENTITY,
+                    semtype.TRUTH_VALUE
+                ),
+                TypeNode(
+                    semtype.ENTITY,
+                    semtype.TRUTH_VALUE
+                )
+            )
+        ))
+        self.assertEqual(unparsed, '<v, <<e, t>, <e, t>>>')
+
+    def test_concisely_unparse_atomic_types(self):
+        self.assertEqual(unparse_type(semtype.ENTITY, concise=True), 'e')
+        self.assertEqual(unparse_type(semtype.EVENT, concise=True), 'v')
+        self.assertEqual(unparse_type(semtype.TRUTH_VALUE, concise=True), 't')
+
+    def test_concisely_unparse_recursive_type(self):
+        unparsed = unparse_type(TypeNode(
+            semtype.ENTITY,
+            semtype.TRUTH_VALUE
+        ), concise=True)
+        self.assertEqual(unparsed, 'et')
+
+    def test_concisely_unparse_deeply_recursive_type(self):
+        unparsed = unparse_type(TypeNode(
+            semtype.EVENT,
+            TypeNode(
+                TypeNode(
+                    semtype.ENTITY,
+                    semtype.TRUTH_VALUE
+                ),
+                TypeNode(
+                    semtype.ENTITY,
+                    semtype.TRUTH_VALUE
+                )
+            )
+        ), concise=True)
+        self.assertEqual(unparsed, '<v, <et, et>>')
