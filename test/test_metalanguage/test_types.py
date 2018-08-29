@@ -1,7 +1,8 @@
 import unittest
 
-
 from montague.metalanguage.types import TypeNode, parse_type, semtype
+
+from lark.exceptions import LarkError
 
 
 class TypeParseTest(unittest.TestCase):
@@ -38,3 +39,33 @@ class TypeParseTest(unittest.TestCase):
                 )
             )
         ))
+
+
+class ParseErrorTest(unittest.TestCase):
+    def test_missing_opening_bracket(self):
+        with self.assertRaises(LarkError):
+            parse_type('e, t>')
+
+    def test_missing_closing_bracket(self):
+        with self.assertRaises(LarkError):
+            parse_type('<e, t')
+
+    def test_trailing_input(self):
+        with self.assertRaises(LarkError):
+            parse_type('<e, t> e')
+
+    def test_missing_comma(self):
+        with self.assertRaises(LarkError):
+            parse_type('<e t>')
+
+    def test_missing_output_type(self):
+        with self.assertRaises(LarkError):
+            parse_type('<e>')
+
+    def test_invalid_abbreviation(self):
+        with self.assertRaises(LarkError):
+            parse_type('evt')
+
+    def test_invalid_letter(self):
+        with self.assertRaises(LarkError):
+            parse_type('b')
