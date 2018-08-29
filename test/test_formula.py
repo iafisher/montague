@@ -130,6 +130,14 @@ class FormulaParseErrorTest(unittest.TestCase):
         with self.assertRaises(LarkError):
             parse_formula('Lx.')
 
+    def test_unknown_token(self):
+        with self.assertRaises(LarkError):
+            parse_formula('Lx.x?')
+
+    def test_empty_string(self):
+        with self.assertRaises(LarkError):
+            parse_formula('')
+
 
 class TypeParseTest(unittest.TestCase):
     def test_parsing_atomic_types(self):
@@ -152,6 +160,22 @@ class TypeParseTest(unittest.TestCase):
 
     def test_parsing_big_compound_type(self):
         tree = parse_type('<<e, t>, <e, <e, t>>>')
+        self.assertEqual(tree, TypeNode(
+            TypeNode(
+                TYPE_ENTITY,
+                TYPE_TRUTH_VALUE
+            ),
+            TypeNode(
+                TYPE_ENTITY,
+                TypeNode(
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
+                )
+            )
+        ))
+
+    def test_parsing_big_compound_type_with_abbreviations(self):
+        tree = parse_type('<et, <e, et>>')
         self.assertEqual(tree, TypeNode(
             TypeNode(
                 TYPE_ENTITY,
@@ -195,6 +219,14 @@ class TypeParseErrorTest(unittest.TestCase):
     def test_invalid_letter(self):
         with self.assertRaises(LarkError):
             parse_type('b')
+
+    def test_unknown_token(self):
+        with self.assertRaises(LarkError):
+            parse_type('e?')
+
+    def test_empty_string(self):
+        with self.assertRaises(LarkError):
+            parse_type('')
 
 
 class UnparseFormulaTest(unittest.TestCase):
