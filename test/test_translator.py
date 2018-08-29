@@ -8,8 +8,8 @@ from montague.formula import (
     TYPE_EVENT, TYPE_TRUTH_VALUE,
 )
 from montague.translator import (
-    LexiconEntry, can_combine, combine, load_lexicon, replace_variable,
-    simplify_formula, translate_sentence,
+    LexiconEntry, TranslationError, can_combine, combine, load_lexicon,
+    replace_variable, simplify_formula, translate_sentence,
 )
 
 
@@ -94,6 +94,15 @@ class TranslatorTest(unittest.TestCase):
             )
         )
         self.assertEqual(tree.type, TYPE_TRUTH_VALUE)
+
+    def test_translate_invalid_sentence(self):
+        with self.assertRaises(TranslationError):
+            translate_sentence('every John is good', test_lexicon)
+
+    def test_translate_unknown_word(self):
+        with self.assertRaises(TranslationError) as cm:
+            translate_sentence('John is whorlious', test_lexicon)
+        self.assertIn('whorlious', cm.exception.args[0])
 
 
 class CombinerTest(unittest.TestCase):

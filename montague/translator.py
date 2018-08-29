@@ -15,7 +15,11 @@ LexiconEntry = namedtuple('LexiconEntry', ['denotation', 'type'])
 
 
 def translate_sentence(sentence, lexicon):
-    terms = [lexicon[t] for t in sentence.split()]
+    try:
+        terms = [lexicon[t] for t in sentence.split()]
+    except KeyError as e:
+        raise TranslationError(f'Could not translate the word {e}')
+
     previous = len(terms)
     while len(terms) > 1:
         new_terms = []
@@ -31,7 +35,7 @@ def translate_sentence(sentence, lexicon):
             new_terms.append(terms[i])
         terms = new_terms
         if len(terms) == previous:
-            raise Exception('Could not combine lexical items', terms)
+            raise TranslationError('Could not translate the sentence')
         previous = len(terms)
     return LexiconEntry(simplify_formula(terms[0].denotation), terms[0].type)
 
@@ -123,6 +127,12 @@ def simplify_formula(tree):
 
 
 class CombinationError(Exception):
+    """When two expressions cannot be combined."""
+    pass
+
+
+class TranslationError(Exception):
+    """When an English sentence cannot be translated into logic."""
     pass
 
 
