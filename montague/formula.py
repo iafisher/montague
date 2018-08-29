@@ -95,8 +95,7 @@ type_parser = Lark('''
     ?start: type
 
     type: "<" type "," type ">"
-        | /[evt]/
-        | /[evt]{2}/
+        | /[evt]{1,2}/
 
     %import common.WS
     %ignore WS
