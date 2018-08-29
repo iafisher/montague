@@ -6,8 +6,8 @@ Version: August 2018
 from collections import namedtuple
 
 from .formula import (
-    AllNode, AndNode, CallNode, ExistsNode, LambdaNode, OrNode, TypeNode,
-    VarNode, parse_formula, parse_type
+    AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
+    TypeNode, VarNode, parse_formula, parse_type
 )
 
 
@@ -33,7 +33,7 @@ def translate_sentence(sentence, lexicon):
         if len(terms) == previous:
             raise Exception('Could not combine lexical items', terms)
         previous = len(terms)
-    return terms[0]
+    return LexiconEntry(simplify_formula(terms[0].denotation), terms[0].type)
 
 
 def combine(term1, term2):
@@ -44,8 +44,7 @@ def combine(term1, term2):
     else:
         raise CombinationError
     return LexiconEntry(
-        replace_variable(term1.denotation.body, term1.denotation.parameter,
-            term2.denotation),
+        CallNode(term1.denotation, term2.denotation),
         term1.type.right
     )
 
@@ -64,6 +63,11 @@ def replace_variable(formula, variable, replacement):
         )
     elif isinstance(formula, OrNode):
         return OrNode(
+            replace_variable(formula.left, variable, replacement),
+            replace_variable(formula.right, variable, replacement)
+        )
+    elif isinstance(formula, IfNode):
+        return IfNode(
             replace_variable(formula.left, variable, replacement),
             replace_variable(formula.right, variable, replacement)
         )
@@ -96,7 +100,9 @@ def simplify_formula(tree):
         caller = simplify_formula(tree.caller)
         arg = simplify_formula(tree.arg)
         if isinstance(caller, LambdaNode):
-            return replace_variable(caller.body, caller.parameter, arg)
+            return simplify_formula(
+                replace_variable(caller.body, caller.parameter, arg)
+            )
         else:
             return CallNode(tree.caller, arg)
     elif isinstance(tree, tuple):

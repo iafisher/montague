@@ -4,8 +4,8 @@ import unittest
 
 from montague.formula import (
     AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
-    TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
-    TYPE_TRUTH_VALUE,
+    TypeNode, VarNode, parse_formula, parse_type, unparse_formula, TYPE_ENTITY,
+    TYPE_EVENT, TYPE_TRUTH_VALUE,
 )
 from montague.translator import (
     LexiconEntry, can_combine, combine, load_lexicon, replace_variable,
@@ -56,41 +56,44 @@ test_lexicon = {
 class TranslatorTest(unittest.TestCase):
     def test_is_good(self):
         tree = translate_sentence('is good', test_lexicon)
-        self.assertEqual(tree, LexiconEntry(
-            LambdaNode('x',
+        self.assertEqual(
+            tree.denotation,
+            LambdaNode(
+                'x',
                 CallNode(VarNode('Good'), VarNode('x'))
             ),
-            TYPE_ET
-        ))
+        )
+        self.assertEqual(tree.type, TYPE_ET)
 
     def test_john_is_good(self):
         tree = translate_sentence('John is good', test_lexicon)
-        self.assertEqual(tree, LexiconEntry(
-            CallNode(VarNode('Good'), VarNode('j')),
-            TYPE_TRUTH_VALUE
-        ))
+        self.assertEqual(
+            tree.denotation,
+            CallNode(VarNode('Good'), VarNode('j'))
+        )
+        self.assertEqual(tree.type, TYPE_TRUTH_VALUE)
 
     def test_john_is_bad(self):
         tree = translate_sentence('John is bad', test_lexicon)
-        self.assertEqual(tree, LexiconEntry(
-            CallNode(VarNode('Bad'), VarNode('j')),
-            TYPE_TRUTH_VALUE
-        ))
+        self.assertEqual(
+            tree.denotation,
+            CallNode(VarNode('Bad'), VarNode('j'))
+        )
+        self.assertEqual(tree.type, TYPE_TRUTH_VALUE)
 
-    @unittest.skip('')
-    def test_every_child(self):
-        tree = translate_sentence('every child', test_lexicon)
-        self.assertEqual(tree, LexiconEntry(
-            LambdaNode('Q',
-                AllNode('x',
-                    IfNode(
-                        CallNode(VarNode('child'), VarNode('x')),
-                        CallNode(VarNode('Q'), VarNode('x'))
-                    )
+    def test_every_child_is_good(self):
+        tree = translate_sentence('every child is good', test_lexicon)
+        self.assertTupleEqual(
+            tree.denotation,
+            AllNode(
+                'x',
+                IfNode(
+                    CallNode(VarNode('Child'), VarNode('x')),
+                    CallNode(VarNode('Good'), VarNode('x'))
                 )
-            ),
-            TypeNode(TYPE_ET, TYPE_TRUTH_VALUE)
-        ))
+            )
+        )
+        self.assertEqual(tree.type, TYPE_TRUTH_VALUE)
 
 
 class CombinerTest(unittest.TestCase):
@@ -106,17 +109,21 @@ class CombinerTest(unittest.TestCase):
         self.assertEqual(saturated.type, TYPE_TRUTH_VALUE)
         self.assertEqual(
             saturated.denotation,
-            CallNode(VarNode('P'), VarNode('me'))
+            CallNode(self.pred.denotation, self.entity.denotation)
+        )
+
+    def test_combine_every_child(self):
+        every = test_lexicon['every']
+        child = test_lexicon['child']
+        every_child = combine(every, child)
+        self.assertEqual(every_child.type, TypeNode(TYPE_ET, TYPE_TRUTH_VALUE))
+        self.assertEqual(
+            every_child.denotation,
+            CallNode(every.denotation, child.denotation)
         )
 
     def test_can_combine_is_good(self):
         self.assertTrue(can_combine(test_lexicon['is'], test_lexicon['good']))
-
-    def test_can_combine_every_child(self):
-        self.assertTrue(can_combine(
-            test_lexicon['every'],
-            test_lexicon['child'])
-        )
 
     def test_mismatched_types(self):
         self.assertFalse(can_combine(self.pred, self.pred))
@@ -199,18 +206,78 @@ class SimplifierTest(unittest.TestCase):
         self.assertEqual(tree, VarNode('j'))
 
     def test_simplify_nested_call(self):
-        tree = simplify_formula(CallNode(
+        # (Lx.Ly.x & y)(a)(b) -> a & b
+        tree = simplify_formula(
             CallNode(
-                LambdaNode('x',
-                    LambdaNode('y',
+                CallNode(
+                    LambdaNode('x',
+                        LambdaNode('y',
+                            AndNode(VarNode('x'), VarNode('y'))
+                        )
+                    ),
+                    VarNode('a')
+                ),
+                VarNode('b')
+            )
+        )
+        self.assertEqual(tree, AndNode(VarNode('a'), VarNode('b')))
+
+    def test_simplify_call_with_lambda_arg(self):
+        # (LP.P(x))(Lx.x | a) -> x | a
+        tree = simplify_formula(
+            CallNode(
+                LambdaNode(
+                    'P',
+                    CallNode(VarNode('P'), VarNode('x'))
+                ),
+                LambdaNode(
+                    'x',
+                    OrNode(VarNode('x'), VarNode('a'))
+                )
+            )
+        )
+        self.assertEqual(tree, OrNode(VarNode('x'), VarNode('a')))
+
+    def test_simplify_super_nested_call(self):
+        # (LP.P(a, b))(Lx.Ly.x & y) -> a & b
+        tree = simplify_formula(
+            CallNode(
+                LambdaNode(
+                    'P',
+                    CallNode(CallNode(VarNode('P'), VarNode('a')), VarNode('b'))
+                ),
+                LambdaNode(
+                    'x',
+                    LambdaNode(
+                        'y',
                         AndNode(VarNode('x'), VarNode('y'))
                     )
-                ),
-                VarNode('a')
-            ),
-            VarNode('b')
-        ))
+                )
+            )
+        )
         self.assertEqual(tree, AndNode(VarNode('a'), VarNode('b')))
+
+    def test_simplify_every_child(self):
+        # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
+        tree = simplify_formula(
+            CallNode(
+                test_lexicon['every'].denotation,
+                test_lexicon['child'].denotation
+            )
+        )
+        self.assertTupleEqual(
+            tree,
+            LambdaNode(
+                'Q',
+                AllNode(
+                    'x',
+                    IfNode(
+                        CallNode(VarNode('Child'), VarNode('x')),
+                        CallNode(VarNode('Q'), VarNode('x'))
+                    )
+                )
+            )
+        )
 
 
 class LexiconLoaderTest(unittest.TestCase):
