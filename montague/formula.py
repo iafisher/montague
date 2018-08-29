@@ -49,10 +49,10 @@ class TreeToFormula(Transformer):
 formula_parser = Lark('''
     ?start: expr
 
-    ?expr: ifterm ( IMPLIES ifterm )*
+    ?expr: ifterm | ifterm IMPLIES expr
 
-    ?ifterm: term ( OR term )*
-    ?term: factor ( AND factor )*
+    ?ifterm: term | term OR ifterm
+    ?term: factor | factor AND term
     ?factor: variable | "[" expr "]" | call | lambda_ | forall | exists
 
     call: SYMBOL "(" _arglist? ")"

@@ -22,13 +22,43 @@ class FormulaParseTest(unittest.TestCase):
         tree = parse_formula('a & a\'')
         self.assertEqual(tree, AndNode(VarNode('a'), VarNode('a\'')))
 
+    def test_parsing_multiple_conjunction(self):
+        tree = parse_formula('a & b & c')
+        self.assertEqual(tree, AndNode(
+            VarNode('a'),
+            AndNode(
+                VarNode('b'),
+                VarNode('c')
+            )
+        ))
+
     def test_parsing_disjunction(self):
         tree = parse_formula('b | b0')
         self.assertEqual(tree, OrNode(VarNode('b'), VarNode('b0')))
 
+    def test_parsing_multi_disjunction(self):
+        tree = parse_formula('a | b | c')
+        self.assertEqual(tree, OrNode(
+            VarNode('a'),
+            OrNode(
+                VarNode('b'),
+                VarNode('c')
+            )
+        ))
+
     def test_parsing_implication(self):
         tree = parse_formula('a -> b')
         self.assertEqual(tree, IfNode(VarNode('a'), VarNode('b')))
+
+    def test_parsing_multi_implication(self):
+        tree = parse_formula('a -> b -> c')
+        self.assertEqual(tree, IfNode(
+            VarNode('a'),
+            IfNode(
+                VarNode('b'),
+                VarNode('c')
+            )
+        ))
 
     def test_parsing_precedence(self):
         tree = parse_formula('x & y | z -> m')

@@ -86,6 +86,7 @@ class TranslatorTest(unittest.TestCase):
             TYPE_TRUTH_VALUE
         ))
 
+    @unittest.skip('')
     def test_every_child(self):
         tree = translate_sentence('every child', test_lexicon)
         self.assertEqual(tree, LexiconEntry(
