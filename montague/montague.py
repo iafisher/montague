@@ -8,7 +8,6 @@ import os
 import readline
 import sys
 
-from .formula import unparse_formula, unparse_type
 from .translator import load_lexicon, translate_sentence
 
 
@@ -40,5 +39,5 @@ if __name__ == '__main__':
         except Exception as e:
             print('Error:', e)
         else:
-            print('Denotation:', unparse_formula(entry.denotation))
-            print('Type:', unparse_type(entry.type))
+            print('Denotation:', entry.denotation)
+            print('Type:', entry.type)

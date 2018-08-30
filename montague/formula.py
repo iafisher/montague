@@ -10,14 +10,53 @@ from enum import Enum
 from lark import Lark, Transformer
 
 
-VarNode = namedtuple('VarNode', 'value')
-AndNode = namedtuple('AndNode', ['left', 'right'])
-OrNode = namedtuple('OrNode', ['left', 'right'])
-IfNode = namedtuple('IfNode', ['left', 'right'])
-LambdaNode = namedtuple('LambdaNode', ['parameter', 'body'])
-CallNode = namedtuple('CallNode', ['caller', 'arg'])
-AllNode = namedtuple('AllNode', ['symbol', 'body'])
-ExistsNode = namedtuple('ExistsNode', ['symbol', 'body'])
+class VarNode(namedtuple('VarNode', 'value')):
+    def __str__(self):
+        return self.value
+
+
+class AndNode(namedtuple('AndNode', ['left', 'right'])):
+    def __str__(self):
+        return f'{self.left} & {self.right}'
+
+
+class OrNode(namedtuple('OrNode', ['left', 'right'])):
+    def __str__(self):
+        return f'{self.left} | {self.right}'
+
+
+class IfNode(namedtuple('IfNode', ['left', 'right'])):
+    def __str__(self):
+        return f'{self.left} -> {self.right}'
+
+
+class LambdaNode(namedtuple('LambdaNode', ['parameter', 'body'])):
+    def __str__(self):
+        return f'L{self.parameter}.{self.body}'
+
+
+class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
+    def __str__(self):
+        args = [str(self.arg)]
+        func = self.caller
+        while isinstance(func, CallNode):
+            args.append(str(func.arg))
+            func = func.caller
+        args = ', '.join(reversed(args))
+        if isinstance(func, VarNode):
+            return f'{func}({args})'
+        else:
+            return f'({func})({args})'
+
+
+class AllNode(namedtuple('AllNode', ['symbol', 'body'])):
+    def __str__(self):
+        return f'A{self.symbol}.{self.body}'
+
+
+class ExistsNode(namedtuple('ExistsNode', ['symbol', 'body'])):
+    def __str__(self):
+        return f'E{self.symbol}.{self.body}'
 
 
 class TreeToFormula(Transformer):
@@ -81,12 +120,27 @@ def parse_formula(formula):
     return formula_parser.parse(formula)
 
 
-TypeNode = namedtuple('TypeNode', ['left', 'right'])
+class TypeNode(namedtuple('TypeNode', ['left', 'right'])):
+    def __str__(self):
+        return f'<{self.left}, {self.right}>'
+
+    def concise_str(self):
+        left = self.left
+        if isinstance(self.left, AtomicType) \
+           and isinstance(self.right, AtomicType):
+            return f'{self.left}{self.right}'
+        else:
+            return f'<{self.left.concise_str()}, {self.right.concise_str()}>'
 
 
-TYPE_ENTITY = 'e'
-TYPE_TRUTH_VALUE = 't'
-TYPE_EVENT = 'v'
+class AtomicType(str):
+    def concise_str(self):
+        return self
+
+
+TYPE_ENTITY = AtomicType('e')
+TYPE_TRUTH_VALUE = AtomicType('t')
+TYPE_EVENT = AtomicType('v')
 
 
 class TreeToType(Transformer):
@@ -113,46 +167,3 @@ type_parser = Lark('''
 
 def parse_type(typestring):
     return type_parser.parse(typestring)
-
-
-def unparse_formula(tree):
-    if isinstance(tree, ExistsNode):
-        return f'E{tree.symbol}.{unparse_formula(tree.body)}'
-    elif isinstance(tree, AllNode):
-        return f'A{tree.symbol}.{unparse_formula(tree.body)}'
-    elif isinstance(tree, LambdaNode):
-        return f'L{tree.parameter}.{unparse_formula(tree.body)}'
-    elif isinstance(tree, CallNode):
-        args = [unparse_formula(tree.arg)]
-        func = tree.caller
-        while isinstance(func, CallNode):
-            args.append(unparse_formula(func.arg))
-            func = func.caller
-        args = ', '.join(reversed(args))
-        if isinstance(func, VarNode):
-            return f'{unparse_formula(func)}({args})'
-        else:
-            return f'({unparse_formula(func)})({args})'
-    elif isinstance(tree, OrNode):
-        return f'{unparse_formula(tree.left)} | {unparse_formula(tree.right)}'
-    elif isinstance(tree, AndNode):
-        return f'{unparse_formula(tree.left)} & {unparse_formula(tree.right)}'
-    elif isinstance(tree, IfNode):
-        return f'{unparse_formula(tree.left)} -> {unparse_formula(tree.right)}'
-    elif isinstance(tree, VarNode):
-        return tree.value
-    else:
-        raise Exception('Unhandled class', formula.__class__)
-
-
-def unparse_type(tree, *, concise=False):
-    if isinstance(tree, TypeNode):
-        if concise and not isinstance(tree.left, TypeNode) \
-            and not isinstance(tree.right, TypeNode):
-            return tree.left + tree.right
-        else:
-            left = unparse_type(tree.left, concise=concise)
-            right = unparse_type(tree.right, concise=concise)
-            return f'<{left}, {right}>'
-    else:
-        return tree

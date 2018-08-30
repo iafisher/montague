@@ -4,8 +4,8 @@ import unittest
 
 from montague.formula import (
     AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
-    TypeNode, VarNode, parse_formula, parse_type, unparse_formula, TYPE_ENTITY,
-    TYPE_EVENT, TYPE_TRUTH_VALUE,
+    TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
+    TYPE_TRUTH_VALUE,
 )
 from montague.translator import (
     LexiconEntry, LexiconError, TranslationError, can_combine, combine,

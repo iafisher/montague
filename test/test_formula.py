@@ -3,7 +3,7 @@ import unittest
 from montague.formula import (
     AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
     TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
-    TYPE_TRUTH_VALUE, unparse_formula, unparse_type,
+    TYPE_TRUTH_VALUE,
 )
 
 from lark.exceptions import LarkError
@@ -345,31 +345,28 @@ class TypeParseErrorTest(unittest.TestCase):
             parse_type('')
 
 
-class UnparseFormulaTest(unittest.TestCase):
-    def test_unparse_variable(self):
-        unparsed = unparse_formula(VarNode('a'))
-        self.assertEqual(unparsed, 'a')
+class FormulaToStrTest(unittest.TestCase):
+    def test_variable_to_str(self):
+        self.assertEqual(str(VarNode('a')), 'a')
 
-    def test_unparse_and(self):
-        unparsed = unparse_formula(AndNode(VarNode('a'), VarNode('b')))
+    def test_and_to_str(self):
+        unparsed = str(AndNode(VarNode('a'), VarNode('b')))
         self.assertEqual(unparsed, 'a & b')
 
-    def test_unparse_or(self):
-        unparsed = unparse_formula(OrNode(VarNode('a'), VarNode('b')))
+    def test_or_to_str(self):
+        unparsed = str(OrNode(VarNode('a'), VarNode('b')))
         self.assertEqual(unparsed, 'a | b')
 
-    def test_unparse_if(self):
-        unparsed = unparse_formula(IfNode(VarNode('a'), VarNode('b')))
+    def test_if_to_str(self):
+        unparsed = str(IfNode(VarNode('a'), VarNode('b')))
         self.assertEqual(unparsed, 'a -> b')
 
-    def test_unparse_lambda(self):
-        unparsed = unparse_formula(
-            LambdaNode('x', AndNode(VarNode('a'), VarNode('x')))
-        )
+    def test_lambda_to_str(self):
+        unparsed = str(LambdaNode('x', AndNode(VarNode('a'), VarNode('x'))))
         self.assertEqual(unparsed, 'Lx.a & x')
 
-    def test_unparse_call(self):
-        unparsed = unparse_formula(
+    def test_call_to_str(self):
+        unparsed = str(
             CallNode(
                 CallNode(
                     VarNode('P'),
@@ -380,87 +377,64 @@ class UnparseFormulaTest(unittest.TestCase):
         )
         self.assertEqual(unparsed, 'P(a & b, Lx.x)')
 
-    def test_unparse_call_one_arg(self):
-        unparsed = unparse_formula(CallNode(VarNode('P'), VarNode('x')))
+    def test_call_with_one_arg_to_str(self):
+        unparsed = str(CallNode(VarNode('P'), VarNode('x')))
         self.assertEqual(unparsed, 'P(x)')
 
-    def test_unparse_forall(self):
-        unparsed = unparse_formula(
-            AllNode('x', CallNode(VarNode('P'), VarNode('x')))
-        )
+    def test_forall_to_str(self):
+        unparsed = str(AllNode('x', CallNode(VarNode('P'), VarNode('x'))))
         self.assertEqual(unparsed, 'Ax.P(x)')
 
-    def test_unparse_exists(self):
-        unparsed = unparse_formula(
-            ExistsNode('x', CallNode(VarNode('P'), VarNode('x')))
-        )
+    def test_exists_to_str(self):
+        unparsed = str(ExistsNode('x', CallNode(VarNode('P'), VarNode('x'))))
         self.assertEqual(unparsed, 'Ex.P(x)')
 
 
-class UnparseTypeTest(unittest.TestCase):
-    def test_unparse_entity(self):
-        unparsed = unparse_type(TYPE_ENTITY)
-        self.assertEqual(unparsed, 'e')
+class TypeToStrTest(unittest.TestCase):
+    def test_entity_to_str(self):
+        self.assertEqual(str(TYPE_ENTITY), 'e')
 
-    def test_unparse_event(self):
-        unparsed = unparse_type(TYPE_EVENT)
-        self.assertEqual(unparsed, 'v')
+    def test_event_to_str(self):
+        self.assertEqual(str(TYPE_EVENT), 'v')
 
-    def test_unparse_truth(self):
-        unparsed = unparse_type(TYPE_TRUTH_VALUE)
-        self.assertEqual(unparsed, 't')
+    def test_truth_value_to_str(self):
+        self.assertEqual(str(TYPE_TRUTH_VALUE), 't')
 
-    def test_unparse_recursive_type(self):
-        unparsed = unparse_type(
-            TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
-        )
-        self.assertEqual(unparsed, '<e, t>')
+    def test_recursive_type_to_str(self):
+        self.assertEqual(str(TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)), '<e, t>')
 
-    def test_unparse_deeply_recursive_type(self):
-        unparsed = unparse_type(
+    def test_deeply_recursive_type_to_str(self):
+        typ = TypeNode(
+            TYPE_EVENT,
             TypeNode(
-                TYPE_EVENT,
                 TypeNode(
-                    TypeNode(
-                        TYPE_ENTITY,
-                        TYPE_TRUTH_VALUE
-                    ),
-                    TypeNode(
-                        TYPE_ENTITY,
-                        TYPE_TRUTH_VALUE
-                    )
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
+                ),
+                TypeNode(
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
                 )
             )
         )
-        self.assertEqual(unparsed, '<v, <<e, t>, <e, t>>>')
+        self.assertEqual(str(typ), '<v, <<e, t>, <e, t>>>')
 
-    def test_concisely_unparse_atomic_types(self):
-        self.assertEqual(unparse_type(TYPE_ENTITY, concise=True), 'e')
-        self.assertEqual(unparse_type(TYPE_EVENT, concise=True), 'v')
-        self.assertEqual(unparse_type(TYPE_TRUTH_VALUE, concise=True), 't')
+    def test_recursive_type_to_concise_str(self):
+        typ = TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+        self.assertEqual(typ.concise_str(), 'et')
 
-    def test_concisely_unparse_recursive_type(self):
-        unparsed = unparse_type(
-            TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE),
-            concise=True
-        )
-        self.assertEqual(unparsed, 'et')
-
-    def test_concisely_unparse_deeply_recursive_type(self):
-        unparsed = unparse_type(
+    def test_deeply_recursive_type_to_concise_str(self):
+        typ = TypeNode(
+            TYPE_EVENT,
             TypeNode(
-                TYPE_EVENT,
                 TypeNode(
-                    TypeNode(
-                        TYPE_ENTITY,
-                        TYPE_TRUTH_VALUE
-                    ),
-                    TypeNode(
-                        TYPE_ENTITY,
-                        TYPE_TRUTH_VALUE
-                    )
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
+                ),
+                TypeNode(
+                    TYPE_ENTITY,
+                    TYPE_TRUTH_VALUE
                 )
-            ),
-            concise=True
+            )
         )
-        self.assertEqual(unparsed, '<v, <et, et>>')
+        self.assertEqual(typ.concise_str(), '<v, <et, et>>')
