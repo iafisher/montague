@@ -16,7 +16,7 @@ from montague.translator import (
 TYPE_ET = TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 
-test_lexicon = {
+TEST_LEXICON = {
   "bad": LexiconEntry(
       LambdaNode('x', CallNode(VarNode('Bad'), VarNode('x'))),
       TYPE_ET
@@ -58,7 +58,7 @@ test_lexicon = {
 
 class TranslatorTest(unittest.TestCase):
     def test_is_good(self):
-        tree = translate_sentence('is good', test_lexicon)
+        tree = translate_sentence('is good', TEST_LEXICON)
         self.assertTupleEqual(
             tree.denotation,
             LambdaNode(
@@ -69,7 +69,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertEqual(tree.type, TYPE_ET)
 
     def test_john_is_good(self):
-        tree = translate_sentence('John is good', test_lexicon)
+        tree = translate_sentence('John is good', TEST_LEXICON)
         self.assertTupleEqual(
             tree.denotation,
             CallNode(VarNode('Good'), VarNode('j'))
@@ -77,7 +77,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertEqual(tree.type, TYPE_TRUTH_VALUE)
 
     def test_john_is_bad(self):
-        tree = translate_sentence('John is bad', test_lexicon)
+        tree = translate_sentence('John is bad', TEST_LEXICON)
         self.assertTupleEqual(
             tree.denotation,
             CallNode(VarNode('Bad'), VarNode('j'))
@@ -85,7 +85,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertEqual(tree.type, TYPE_TRUTH_VALUE)
 
     def test_every_child_is_good(self):
-        tree = translate_sentence('every child is good', test_lexicon)
+        tree = translate_sentence('every child is good', TEST_LEXICON)
         self.assertTupleEqual(
             tree.denotation,
             AllNode(
@@ -100,11 +100,11 @@ class TranslatorTest(unittest.TestCase):
 
     def test_translate_invalid_sentence(self):
         with self.assertRaises(TranslationError):
-            translate_sentence('every John is good', test_lexicon)
+            translate_sentence('every John is good', TEST_LEXICON)
 
     def test_translate_unknown_word(self):
         with self.assertRaisesRegex(TranslationError, r'.*whorlious.*'):
-            translate_sentence('John is whorlious', test_lexicon)
+            translate_sentence('John is whorlious', TEST_LEXICON)
 
 
 class CombinerTest(unittest.TestCase):
@@ -124,8 +124,8 @@ class CombinerTest(unittest.TestCase):
         self.assertEqual(saturated.type, TYPE_TRUTH_VALUE)
 
     def test_combine_every_child(self):
-        every = test_lexicon['every']
-        child = test_lexicon['child']
+        every = TEST_LEXICON['every']
+        child = TEST_LEXICON['child']
         every_child = combine(every, child)
         self.assertTupleEqual(
             every_child.denotation,
@@ -134,7 +134,7 @@ class CombinerTest(unittest.TestCase):
         self.assertEqual(every_child.type, TypeNode(TYPE_ET, TYPE_TRUTH_VALUE))
 
     def test_can_combine_is_good(self):
-        self.assertTrue(can_combine(test_lexicon['is'], test_lexicon['good']))
+        self.assertTrue(can_combine(TEST_LEXICON['is'], TEST_LEXICON['good']))
 
     def test_mismatched_types(self):
         self.assertFalse(can_combine(self.pred, self.pred))
@@ -284,8 +284,8 @@ class SimplifierTest(unittest.TestCase):
         # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
         tree = simplify_formula(
             CallNode(
-                test_lexicon['every'].denotation,
-                test_lexicon['child'].denotation
+                TEST_LEXICON['every'].denotation,
+                TEST_LEXICON['child'].denotation
             )
         )
         self.assertTupleEqual(
