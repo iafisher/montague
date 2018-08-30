@@ -24,10 +24,10 @@ def run_shell():
     print(HELP_MESSAGE)
 
     try:
-        with open(os.path.join(FILE_DIR, 'fragment.json')) as f:
+        with open(FRAGMENT_PATH) as f:
             lexicon = load_lexicon(json.load(f))
     except (FileNotFoundError, IOError):
-        sys.stderr.write('Error: failed to open fragment.json\n')
+        sys.stderr.write(f'Error: failed to open {FRAGMENT_PATH}\n')
         sys.exit(1)
 
     shell_state = ShellState(lexicon=lexicon)
@@ -89,7 +89,8 @@ Available modes:
 AVAILABLE_MODES = {'translate'}
 AVAILABLE_MODES_STR = ', '.join(AVAILABLE_MODES)
 
-FILE_DIR = os.path.dirname(os.path.realpath(__file__))
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+FRAGMENT_PATH = os.path.join(PROJECT_DIR, 'resources', 'fragment.json')
 
 
 if __name__ == '__main__':
