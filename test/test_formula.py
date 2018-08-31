@@ -337,18 +337,18 @@ class FormulaToStrTest(unittest.TestCase):
         self.assertEqual(str(VarNode('a')), 'a')
 
     def test_and_to_str(self):
-        self.assertEqual(str(AndNode(VarNode('a'), VarNode('b'))), '[a & b]')
+        self.assertEqual(str(AndNode(VarNode('a'), VarNode('b'))), 'a & b')
 
     def test_or_to_str(self):
-        self.assertEqual(str(OrNode(VarNode('a'), VarNode('b'))), '[a | b]')
+        self.assertEqual(str(OrNode(VarNode('a'), VarNode('b'))), 'a | b')
 
     def test_if_to_str(self):
-        self.assertEqual(str(IfNode(VarNode('a'), VarNode('b'))), '[a -> b]')
+        self.assertEqual(str(IfNode(VarNode('a'), VarNode('b'))), 'a -> b')
 
     def test_lambda_to_str(self):
         self.assertEqual(
             str(LambdaNode('x', AndNode(VarNode('a'), VarNode('x')))),
-            '[Lx.[a & x]]'
+            'Lx.a & x'
         )
 
     def test_call_to_str(self):
@@ -359,7 +359,7 @@ class FormulaToStrTest(unittest.TestCase):
                     LambdaNode('x', VarNode('x'))
                 )
             ),
-            'P([a & b], [Lx.x])'
+            'P(a & b, Lx.x)'
         )
 
     def test_call_with_one_arg_to_str(self):
@@ -368,13 +368,13 @@ class FormulaToStrTest(unittest.TestCase):
     def test_forall_to_str(self):
         self.assertEqual(
             str(AllNode('x', CallNode(VarNode('P'), VarNode('x')))),
-            '[Ax.P(x)]'
+            'Ax.P(x)'
         )
 
     def test_exists_to_str(self):
         self.assertEqual(
             str(ExistsNode('x', CallNode(VarNode('P'), VarNode('x')))),
-            '[Ex.P(x)]'
+            'Ex.P(x)'
         )
 
     def test_not_to_str(self):
@@ -392,13 +392,36 @@ class FormulaToStrTest(unittest.TestCase):
     def test_nested_and_or_to_str(self):
         self.assertEqual(
             str(AndNode(OrNode(VarNode('a'), VarNode('b')), VarNode('c'))),
-            '[[a | b] & c]'
+            '[a | b] & c'
         )
 
     def test_nested_and_or_to_str2(self):
         self.assertEqual(
             str(OrNode(AndNode(VarNode('a'), VarNode('b')), VarNode('c'))),
-            '[[a & b] | c]'
+            'a & b | c'
+        )
+
+    def test_nested_exists_and_forall_to_str(self):
+        self.assertEqual(
+            str(
+                AndNode(
+                    AllNode('x', VarNode('x')),
+                    ExistsNode('x', VarNode('x'))
+                )
+            ),
+            '[Ax.x] & [Ex.x]'
+        )
+
+    def test_nested_lambdas_to_str(self):
+        # This formula is semantically invalid but that doesn't matter.
+        self.assertEqual(
+            str(
+                AndNode(
+                    LambdaNode('x', VarNode('x')),
+                    LambdaNode('y', VarNode('y'))
+                )
+            ),
+            '[Lx.x] & [Ly.y]'
         )
 
 

@@ -11,36 +11,57 @@ from lark import Lark, Transformer
 
 
 class VarNode(namedtuple('VarNode', 'value')):
+    prec = 1
+
     def __str__(self):
         return self.value
 
 
 class AndNode(namedtuple('AndNode', ['left', 'right'])):
+    prec = 2
+
     def __str__(self):
-        return f'[{self.left} & {self.right}]'
+        left = wrapb(self, self.left, False)
+        right = wrapb(self, self.right, True)
+        return f'{left} & {right}'
 
 
 class OrNode(namedtuple('OrNode', ['left', 'right'])):
+    prec = 3
+
     def __str__(self):
-        return f'[{self.left} | {self.right}]'
+        left = wrapb(self, self.left, False)
+        right = wrapb(self, self.right, True)
+        return f'{left} | {right}'
 
 
 class IfNode(namedtuple('IfNode', ['left', 'right'])):
+    prec = 4
+
     def __str__(self):
-        return f'[{self.left} -> {self.right}]'
+        left = wrapb(self, self.left, False)
+        right = wrapb(self, self.right, True)
+        return f'{left} -> {right}'
 
 
 class NotNode(namedtuple('NotNode', ['operand'])):
+    prec = 1
+
     def __str__(self):
-        return f'~{self.operand}'
+        operand = wrapb(self, self.operand, False)
+        return f'~{operand}'
 
 
 class LambdaNode(namedtuple('LambdaNode', ['parameter', 'body'])):
+    prec = 5
+
     def __str__(self):
-        return f'[L{self.parameter}.{self.body}]'
+        return f'L{self.parameter}.{self.body}'
 
 
 class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
+    prec = 1
+
     def __str__(self):
         args = [str(self.arg)]
         func = self.caller
@@ -55,13 +76,17 @@ class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
 
 
 class AllNode(namedtuple('AllNode', ['symbol', 'body'])):
+    prec = 5
+
     def __str__(self):
-        return f'[A{self.symbol}.{self.body}]'
+        return f'A{self.symbol}.{self.body}'
 
 
 class ExistsNode(namedtuple('ExistsNode', ['symbol', 'body'])):
+    prec = 5
+
     def __str__(self):
-        return f'[E{self.symbol}.{self.body}]'
+        return f'E{self.symbol}.{self.body}'
 
 
 class TreeToFormula(Transformer):
@@ -183,3 +208,10 @@ type_parser = Lark('''
 
 def parse_type(typestring):
     return type_parser.parse(typestring)
+
+
+def wrapb(parent, child, right):
+    if child.prec > parent.prec or child.prec == parent.prec and right:
+        return f'[{child}]'
+    else:
+        return str(child)
