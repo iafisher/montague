@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from montague.formula import (
-    CallNode, LambdaNode, TypeNode, VarNode, TYPE_ENTITY, TYPE_TRUTH_VALUE,
+    Call, Lambda, Type, Var, TYPE_ENTITY, TYPE_TRUTH_VALUE,
 )
 from montague.montague import ShellState, execute_command, HELP_MESSAGE
 from montague.translator import LexiconEntry
@@ -10,8 +10,8 @@ from montague.translator import LexiconEntry
 
 TEST_LEXICON = {
   "good": LexiconEntry(
-      LambdaNode('x', CallNode(VarNode('Good'), VarNode('x'))),
-      TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+      Lambda('x', Call(Var('Good'), Var('x'))),
+      Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
   ),
 }
 
@@ -43,7 +43,7 @@ class MontagueShellTest(unittest.TestCase):
     @patch('montague.montague.translate_sentence')
     def test_display_formula(self, mock_translate_sentence):
         mock_translate_sentence.return_value = LexiconEntry(
-            CallNode(VarNode('Good'), VarNode('j')),
+            Call(Var('Good'), Var('j')),
             TYPE_TRUTH_VALUE
         )
         response = execute_command('John is good', self.shell_state)

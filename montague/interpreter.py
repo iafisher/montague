@@ -6,10 +6,7 @@ Version: August 2018
 """
 from collections import namedtuple
 
-from .formula import (
-    AndNode, CallNode, ExistsNode, ForAllNode, IfThenNode, NotNode, OrNode,
-    VarNode,
-)
+from .formula import And, Call, Exists, ForAll, IfThen, Not, Or, Var
 
 
 WorldModel = namedtuple('WorldModel', ['individuals', 'assignments'])
@@ -19,22 +16,22 @@ def interpret_formula(formula, model):
     """Given a logical formula and a model of the world, return the formula's
     denotation in the model.
     """
-    if isinstance(formula, VarNode):
+    if isinstance(formula, Var):
         return model.assignments[formula.value]
-    elif isinstance(formula, AndNode):
+    elif isinstance(formula, And):
         return interpret_formula(formula.left, model) \
             and interpret_formula(formula.right, model)
-    elif isinstance(formula, OrNode):
+    elif isinstance(formula, Or):
         return interpret_formula(formula.left, model) \
             or interpret_formula(formula.right, model)
-    elif isinstance(formula, IfThenNode):
+    elif isinstance(formula, IfThen):
         return not interpret_formula(formula.left, model) \
             or interpret_formula(formula.right, model)
-    elif isinstance(formula, CallNode):
+    elif isinstance(formula, Call):
         caller = interpret_formula(formula.caller, model)
         arg = interpret_formula(formula.arg, model)
         return arg in caller
-    elif isinstance(formula, ForAllNode):
+    elif isinstance(formula, ForAll):
         old_value = model.assignments.get(formula.symbol)
         # Check that every assignment of an individual to the universal variable
         # results in a true proposition.
@@ -45,7 +42,7 @@ def interpret_formula(formula, model):
                 return False
         model.assignments[formula.symbol] = old_value
         return True
-    elif isinstance(formula, ExistsNode):
+    elif isinstance(formula, Exists):
         old_value = model.assignments.get(formula.symbol)
         # Check that any assignment of an individual to the existential variable
         # results in a true proposition.
@@ -56,7 +53,7 @@ def interpret_formula(formula, model):
                 return True
         model.assignments[formula.symbol] = old_value
         return False
-    elif isinstance(formula, NotNode):
+    elif isinstance(formula, Not):
         return not interpret_formula(formula.operand, model)
     else:
         # TODO: Handle LambdaNodes differently (they can't be interpreted, but

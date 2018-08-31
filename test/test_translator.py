@@ -3,9 +3,8 @@ import os
 import unittest
 
 from montague.formula import (
-    AndNode, CallNode, ExistsNode, ForAllNode, IfThenNode, LambdaNode, OrNode,
-    TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
-    TYPE_TRUTH_VALUE,
+    And, Call, Exists, ForAll, IfThen, Lambda, Or, Type, Var, parse_formula,
+    parse_type, TYPE_ENTITY, TYPE_EVENT, TYPE_TRUTH_VALUE,
 )
 from montague.translator import (
     LexiconEntry, LexiconError, TranslationError, can_combine, combine,
@@ -13,46 +12,46 @@ from montague.translator import (
 )
 
 
-TYPE_ET = TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+TYPE_ET = Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 
 TEST_LEXICON = {
   "bad": LexiconEntry(
-      LambdaNode('x', CallNode(VarNode('Bad'), VarNode('x'))),
+      Lambda('x', Call(Var('Bad'), Var('x'))),
       TYPE_ET
   ),
   "is": LexiconEntry(
-      LambdaNode('P', VarNode('P')),
-      TypeNode(TYPE_ET, TYPE_ET)
+      Lambda('P', Var('P')),
+      Type(TYPE_ET, TYPE_ET)
   ),
   "good": LexiconEntry(
-      LambdaNode('x', CallNode(VarNode('Good'), VarNode('x'))),
+      Lambda('x', Call(Var('Good'), Var('x'))),
       TYPE_ET
   ),
   "every": LexiconEntry(
-      LambdaNode(
+      Lambda(
           'P',
-          LambdaNode(
+          Lambda(
               'Q',
-              ForAllNode(
+              ForAll(
                   'x',
-                  IfThenNode(
-                      CallNode(VarNode('P'), VarNode('x')),
-                      CallNode(VarNode('Q'), VarNode('x'))
+                  IfThen(
+                      Call(Var('P'), Var('x')),
+                      Call(Var('Q'), Var('x'))
                   )
               )
           )
       ),
-      TypeNode(
+      Type(
           TYPE_ET,
-          TypeNode(TYPE_ET, TYPE_TRUTH_VALUE)
+          Type(TYPE_ET, TYPE_TRUTH_VALUE)
       )
   ),
   "child": LexiconEntry(
-      LambdaNode('x', CallNode(VarNode('Child'), VarNode('x'))),
+      Lambda('x', Call(Var('Child'), Var('x'))),
       TYPE_ET
   ),
-  "John": LexiconEntry(VarNode('j'), TYPE_ENTITY),
+  "John": LexiconEntry(Var('j'), TYPE_ENTITY),
 }
 
 
@@ -61,9 +60,9 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('is good', TEST_LEXICON),
             LexiconEntry(
-                LambdaNode(
+                Lambda(
                     'x',
-                    CallNode(VarNode('Good'), VarNode('x'))
+                    Call(Var('Good'), Var('x'))
                 ),
                 TYPE_ET
             )
@@ -73,7 +72,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('John is good', TEST_LEXICON),
             LexiconEntry(
-                CallNode(VarNode('Good'), VarNode('j')),
+                Call(Var('Good'), Var('j')),
                 TYPE_TRUTH_VALUE
             )
         )
@@ -82,7 +81,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('John is bad', TEST_LEXICON),
             LexiconEntry(
-                CallNode(VarNode('Bad'), VarNode('j')),
+                Call(Var('Bad'), Var('j')),
                 TYPE_TRUTH_VALUE
             )
         )
@@ -91,11 +90,11 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('every child is good', TEST_LEXICON),
             LexiconEntry(
-                ForAllNode(
+                ForAll(
                     'x',
-                    IfThenNode(
-                        CallNode(VarNode('Child'), VarNode('x')),
-                        CallNode(VarNode('Good'), VarNode('x'))
+                    IfThen(
+                        Call(Var('Child'), Var('x')),
+                        Call(Var('Good'), Var('x'))
                     )
                 ),
                 TYPE_TRUTH_VALUE
@@ -113,14 +112,14 @@ class TranslatorTest(unittest.TestCase):
 
 class CombinerTest(unittest.TestCase):
     pred = LexiconEntry(parse_formula('Lx.P(x)'), parse_type('<e, t>'))
-    entity = LexiconEntry(VarNode('me'), TYPE_ENTITY)
+    entity = LexiconEntry(Var('me'), TYPE_ENTITY)
 
     def test_saturate_predicate(self):
         self.assertTrue(can_combine(self.pred, self.entity))
         self.assertTupleEqual(
             combine(self.pred, self.entity),
             LexiconEntry(
-                CallNode(self.pred.denotation, self.entity.denotation),
+                Call(self.pred.denotation, self.entity.denotation),
                 TYPE_TRUTH_VALUE
             )
         )
@@ -131,8 +130,8 @@ class CombinerTest(unittest.TestCase):
         self.assertTupleEqual(
             combine(every, child),
             LexiconEntry(
-                CallNode(every.denotation, child.denotation),
-                TypeNode(TYPE_ET, TYPE_TRUTH_VALUE)
+                Call(every.denotation, child.denotation),
+                Type(TYPE_ET, TYPE_TRUTH_VALUE)
             )
         )
 
@@ -147,87 +146,87 @@ class CombinerTest(unittest.TestCase):
 
 class SimplifierTest(unittest.TestCase):
     def test_simplify_call(self):
-        tree = CallNode(
-            LambdaNode('x', VarNode('x')),
-            VarNode('j')
+        tree = Call(
+            Lambda('x', Var('x')),
+            Var('j')
         )
         self.assertTupleEqual(
             tree.simplify(),
-            VarNode('j')
+            Var('j')
         )
 
     def test_simplify_nested_call(self):
         # (Lx.Ly.x & y)(a)(b) -> a & b
-        tree = CallNode(
-            CallNode(
-                LambdaNode(
+        tree = Call(
+            Call(
+                Lambda(
                     'x',
-                    LambdaNode(
+                    Lambda(
                         'y',
-                        AndNode(VarNode('x'), VarNode('y'))
+                        And(Var('x'), Var('y'))
                     )
                 ),
-                VarNode('a')
+                Var('a')
             ),
-            VarNode('b')
+            Var('b')
         )
         self.assertTupleEqual(
             tree.simplify(),
-            AndNode(VarNode('a'), VarNode('b'))
+            And(Var('a'), Var('b'))
         )
 
     def test_simplify_call_with_lambda_arg(self):
         # (LP.P(x))(Lx.x | a) -> x | a
-        tree = CallNode(
-            LambdaNode(
+        tree = Call(
+            Lambda(
                 'P',
-                CallNode(VarNode('P'), VarNode('x'))
+                Call(Var('P'), Var('x'))
             ),
-            LambdaNode(
+            Lambda(
                 'x',
-                OrNode(VarNode('x'), VarNode('a'))
+                Or(Var('x'), Var('a'))
             )
         )
         self.assertTupleEqual(
             tree.simplify(),
-            OrNode(VarNode('x'), VarNode('a'))
+            Or(Var('x'), Var('a'))
         )
 
     def test_simplify_super_nested_call(self):
         # (LP.P(a, b))(Lx.Ly.x & y) -> a & b
-        tree = CallNode(
-            LambdaNode(
+        tree = Call(
+            Lambda(
                 'P',
-                CallNode(CallNode(VarNode('P'), VarNode('a')), VarNode('b'))
+                Call(Call(Var('P'), Var('a')), Var('b'))
             ),
-            LambdaNode(
+            Lambda(
                 'x',
-                LambdaNode(
+                Lambda(
                     'y',
-                    AndNode(VarNode('x'), VarNode('y'))
+                    And(Var('x'), Var('y'))
                 )
             )
         )
         self.assertTupleEqual(
             tree.simplify(),
-            AndNode(VarNode('a'), VarNode('b'))
+            And(Var('a'), Var('b'))
         )
 
     def test_simplify_every_child(self):
         # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
-        tree = CallNode(
+        tree = Call(
             TEST_LEXICON['every'].denotation,
             TEST_LEXICON['child'].denotation
         )
         self.assertTupleEqual(
             tree.simplify(),
-            LambdaNode(
+            Lambda(
                 'Q',
-                ForAllNode(
+                ForAll(
                     'x',
-                    IfThenNode(
-                        CallNode(VarNode('Child'), VarNode('x')),
-                        CallNode(VarNode('Q'), VarNode('x'))
+                    IfThen(
+                        Call(Var('Child'), Var('x')),
+                        Call(Var('Q'), Var('x'))
                     )
                 )
             )

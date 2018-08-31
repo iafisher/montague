@@ -1,8 +1,6 @@
 import unittest
 
-from montague.formula import (
-    AndNode, CallNode, ExistsNode, ForAllNode, NotNode, VarNode,
-)
+from montague.formula import And, Call, Exists, ForAll, Not, Var
 from montague.interpreter import WorldModel, interpret_formula
 
 
@@ -25,34 +23,34 @@ test_model = WorldModel(
 
 class InterpreterTest(unittest.TestCase):
     def test_john_is_good_is_true(self):
-        formula = CallNode(VarNode('Good'), VarNode('j'))
+        formula = Call(Var('Good'), Var('j'))
         self.assertTrue(interpret_formula(formula, test_model))
-        self.assertFalse(interpret_formula(NotNode(formula), test_model))
+        self.assertFalse(interpret_formula(Not(formula), test_model))
 
     def test_john_is_bad_is_false(self):
-        formula = CallNode(VarNode('Bad'), VarNode('j'))
+        formula = Call(Var('Bad'), Var('j'))
         self.assertFalse(interpret_formula(formula, test_model))
-        self.assertTrue(interpret_formula(NotNode(formula), test_model))
+        self.assertTrue(interpret_formula(Not(formula), test_model))
 
     def test_mary_is_bad_and_john_is_good_is_true(self):
-        formula = AndNode(
-            CallNode(VarNode('Bad'), VarNode('m')),
-            CallNode(VarNode('Good'), VarNode('j'))
+        formula = And(
+            Call(Var('Bad'), Var('m')),
+            Call(Var('Good'), Var('j'))
         )
         self.assertTrue(interpret_formula(formula, test_model))
 
     def test_everyone_is_bad_is_false(self):
-        formula = ForAllNode('x', CallNode(VarNode('Bad'), VarNode('x')))
+        formula = ForAll('x', Call(Var('Bad'), Var('x')))
         self.assertFalse(interpret_formula(formula, test_model))
 
     def test_everyone_is_human_is_true(self):
-        formula = ForAllNode('x', CallNode(VarNode('Human'), VarNode('x')))
+        formula = ForAll('x', Call(Var('Human'), Var('x')))
         self.assertTrue(interpret_formula(formula, test_model))
 
     def test_someone_is_bad_is_true(self):
-        formula = ExistsNode('x', CallNode(VarNode('Bad'), VarNode('x')))
+        formula = Exists('x', Call(Var('Bad'), Var('x')))
         self.assertTrue(interpret_formula(formula, test_model))
 
     def test_someone_is_alien_is_false(self):
-        formula = ExistsNode('x', CallNode(VarNode('Alien'), VarNode('x')))
+        formula = Exists('x', Call(Var('Alien'), Var('x')))
         self.assertFalse(interpret_formula(formula, test_model))

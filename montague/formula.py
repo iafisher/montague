@@ -13,7 +13,7 @@ from lark import Lark, Transformer
 # Below are defined the classes to represent logical formulas as trees.
 
 
-class Node:
+class Formula:
     def replace_variable(self, variable, replacement):
         """Replace all unbound instances of `variable`, a string, with
         `replacement`.
@@ -21,10 +21,11 @@ class Node:
         The default implementation recursively replaces the variable in all
         children. Subclasses may need to override this implementation.
         """
-        return self.__class__(
-            *[(c.replace_variable(variable, replacement) if isinstance(c, Node)
-               else c) for c in self]
-        )
+        children = [
+            c.replace_variable(variable, replacement) if isinstance(c, Formula)
+            else c for c in self
+        ]
+        return self.__class__(*children)
 
     def simplify(self):
         """Simplify the tree by lambda conversion.
@@ -32,11 +33,13 @@ class Node:
         The default implementation recursively simplifies each child. Subclasses
         may need to override this implementation.
         """
-        return self.__class__(*[(c.simplify() if isinstance(c, Node) else c)
-            for c in self])
+        children = [
+            c.simplify() if isinstance(c, Formula) else c for c in self
+        ]
+        return self.__class__(*children)
 
 
-class VarNode(Node, namedtuple('VarNode', ['value'])):
+class Var(Formula, namedtuple('Var', ['value'])):
     prec = 1
 
     def __str__(self):
@@ -46,7 +49,7 @@ class VarNode(Node, namedtuple('VarNode', ['value'])):
         return self if variable != self.value else replacement
 
 
-class AndNode(Node, namedtuple('AndNode', ['left', 'right'])):
+class And(Formula, namedtuple('And', ['left', 'right'])):
     prec = 2
 
     def __str__(self):
@@ -56,7 +59,7 @@ class AndNode(Node, namedtuple('AndNode', ['left', 'right'])):
         return f'{left} & {right}'
 
 
-class OrNode(Node, namedtuple('OrNode', ['left', 'right'])):
+class Or(Formula, namedtuple('Or', ['left', 'right'])):
     prec = 3
 
     def __str__(self):
@@ -65,7 +68,7 @@ class OrNode(Node, namedtuple('OrNode', ['left', 'right'])):
         return f'{left} | {right}'
 
 
-class IfThenNode(Node, namedtuple('IfThenNode', ['left', 'right'])):
+class IfThen(Formula, namedtuple('IfThen', ['left', 'right'])):
     prec = 4
 
     def __str__(self):
@@ -74,7 +77,7 @@ class IfThenNode(Node, namedtuple('IfThenNode', ['left', 'right'])):
         return f'{left} -> {right}'
 
 
-class IfAndOnlyIfNode(Node, namedtuple('IfAndOnlyIfNode', ['left', 'right'])):
+class IfAndOnlyIf(Formula, namedtuple('IfAndOnlyIf', ['left', 'right'])):
     prec = 4
 
     def __str__(self):
@@ -83,7 +86,7 @@ class IfAndOnlyIfNode(Node, namedtuple('IfAndOnlyIfNode', ['left', 'right'])):
         return f'{left} <-> {right}'
 
 
-class NotNode(Node, namedtuple('NotNode', ['operand'])):
+class Not(Formula, namedtuple('Not', ['operand'])):
     prec = 1
 
     def __str__(self):
@@ -91,7 +94,7 @@ class NotNode(Node, namedtuple('NotNode', ['operand'])):
         return f'~{operand}'
 
 
-class LambdaNode(Node, namedtuple('LambdaNode', ['parameter', 'body'])):
+class Lambda(Formula, namedtuple('Lambda', ['parameter', 'body'])):
     prec = 5
 
     def __str__(self):
@@ -99,7 +102,7 @@ class LambdaNode(Node, namedtuple('LambdaNode', ['parameter', 'body'])):
 
     def replace_variable(self, variable, replacement):
         if variable != self.parameter:
-            return LambdaNode(
+            return Lambda(
                 self.parameter,
                 self.body.replace_variable(variable, replacement)
             )
@@ -107,7 +110,7 @@ class LambdaNode(Node, namedtuple('LambdaNode', ['parameter', 'body'])):
             return self
 
 
-class CallNode(Node, namedtuple('CallNode', ['caller', 'arg'])):
+class Call(Formula, namedtuple('Call', ['caller', 'arg'])):
     prec = 1
 
     def __str__(self):
@@ -116,11 +119,11 @@ class CallNode(Node, namedtuple('CallNode', ['caller', 'arg'])):
         # expect.
         args = [str(self.arg)]
         func = self.caller
-        while isinstance(func, CallNode):
+        while isinstance(func, Call):
             args.append(str(func.arg))
             func = func.caller
         args = ', '.join(reversed(args))
-        if isinstance(func, VarNode):
+        if isinstance(func, Var):
             return f'{func}({args})'
         else:
             # Syntactically, a non-constant function must be in parentheses in
@@ -130,14 +133,14 @@ class CallNode(Node, namedtuple('CallNode', ['caller', 'arg'])):
     def simplify(self):
         caller = self.caller.simplify()
         arg = self.arg.simplify()
-        if isinstance(caller, LambdaNode):
+        if isinstance(caller, Lambda):
             return caller.body.replace_variable(caller.parameter, arg) \
                 .simplify()
         else:
-            return CallNode(self.caller, arg)
+            return Call(self.caller, arg)
 
 
-class ForAllNode(Node, namedtuple('ForAllNode', ['symbol', 'body'])):
+class ForAll(Formula, namedtuple('ForAll', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
@@ -145,7 +148,7 @@ class ForAllNode(Node, namedtuple('ForAllNode', ['symbol', 'body'])):
 
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
-            return ForAllNode(
+            return ForAll(
                 self.symbol,
                 self.body.replace_variable(variable, replacement)
             )
@@ -153,7 +156,7 @@ class ForAllNode(Node, namedtuple('ForAllNode', ['symbol', 'body'])):
             return self
 
 
-class ExistsNode(Node, namedtuple('ExistsNode', ['symbol', 'body'])):
+class Exists(Formula, namedtuple('Exists', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
@@ -161,7 +164,7 @@ class ExistsNode(Node, namedtuple('ExistsNode', ['symbol', 'body'])):
 
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
-            return ExistsNode(
+            return Exists(
                 self.symbol,
                 self.body.replace_variable(variable, replacement)
             )
@@ -170,47 +173,45 @@ class ExistsNode(Node, namedtuple('ExistsNode', ['symbol', 'body'])):
 
 
 class TreeToFormula(Transformer):
-    """Transform Lark's parse tree into a formula tree with objects of the Node
-    classes.
-    """
+    """Transform Lark's parse tree into a formula tree with Formula objects."""
 
     def expr(self, matches):
         if matches[1] == '->':
-            return IfThenNode(matches[0], matches[2])
+            return IfThen(matches[0], matches[2])
         elif matches[1] == '<->':
-            return IfAndOnlyIfNode(matches[0], matches[2])
+            return IfAndOnlyIf(matches[0], matches[2])
         else:
             raise NotImplementedError
 
     def ifterm(self, matches):
-        return OrNode(matches[0], matches[2])
+        return Or(matches[0], matches[2])
 
     def term(self, matches):
-        return AndNode(matches[0], matches[2])
+        return And(matches[0], matches[2])
 
     def variable(self, matches):
-        return VarNode(matches[0])
+        return Var(matches[0])
 
     def lambda_(self, matches):
-        return LambdaNode(matches[0], matches[1])
+        return Lambda(matches[0], matches[1])
 
     def forall(self, matches):
-        return ForAllNode(matches[0], matches[1])
+        return ForAll(matches[0], matches[1])
 
     def exists(self, matches):
-        return ExistsNode(matches[0], matches[1])
+        return Exists(matches[0], matches[1])
 
     def call(self, matches):
         # The parse tree allows n-ary functions but the AST only allows unary
         # functions. This methods converts the former to the latter, e.g.
         # F(x, y, z) becomes F(x)(y)(z), three nested CallNodes.
-        func = CallNode(matches[0], matches[1])
+        func = Call(matches[0], matches[1])
         for i in range(2, len(matches)):
-            func = CallNode(func, matches[i])
+            func = Call(func, matches[i])
         return func
 
     def not_e(self, matches):
-        return NotNode(matches[1])
+        return Not(matches[1])
 
 
 # The grammar of the logical language.
@@ -251,7 +252,7 @@ formula_parser = Lark('''
 
 
 def parse_formula(formula):
-    """Parse `formula`, a string, into a tree of objects of the Node classes.
+    """Parse `formula`, a string, into a tree of Formula objects.
 
     If the string cannot be parsed, a LarkError is raised.
     """
@@ -261,7 +262,7 @@ def parse_formula(formula):
 # Below are defined the classes to represent semantic types as trees.
 
 
-class TypeNode(namedtuple('TypeNode', ['left', 'right'])):
+class Type(namedtuple('Type', ['left', 'right'])):
     def __str__(self):
         return f'<{self.left}, {self.right}>'
 
@@ -269,7 +270,7 @@ class TypeNode(namedtuple('TypeNode', ['left', 'right'])):
         """Convert the type to a string, recursively abbreviating '<x, y>' as
         'xy' as long as 'x' and 'y' are atomic types.
 
-           >>> typ = TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+           >>> typ = Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
            >>> str(typ)
            '<e, t>'
            >>> typ.concise_str()
@@ -295,15 +296,15 @@ TYPE_WORLD = AtomicType('s')
 
 
 class TreeToType(Transformer):
-    """Transform Lark's parse tree into a type tree with TypeNode and AtomicType
+    """Transform Lark's parse tree into a type tree with Type and AtomicType
     objects.
     """
     def type(self, matches):
         if len(matches) == 2:
-            return TypeNode(matches[0], matches[1])
+            return Type(matches[0], matches[1])
         elif len(matches) == 1:
             if len(matches[0]) == 2:
-                return TypeNode(matches[0][0], matches[0][1])
+                return Type(matches[0][0], matches[0][1])
             else:
                 return matches[0]
         else:
@@ -323,7 +324,7 @@ type_parser = Lark('''
 
 
 def parse_type(typestring):
-    """Parse `typestring` into a tree of TypeNode and AtomicType objects.
+    """Parse `typestring` into a tree of Type and AtomicType objects.
 
     If the string cannot be parsed, a LarkError is raised.
     """
