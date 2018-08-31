@@ -17,30 +17,27 @@ class VarNode(namedtuple('VarNode', 'value')):
 
 class AndNode(namedtuple('AndNode', ['left', 'right'])):
     def __str__(self):
-        return f'{self.left} & {self.right}'
+        return f'[{self.left} & {self.right}]'
 
 
 class OrNode(namedtuple('OrNode', ['left', 'right'])):
     def __str__(self):
-        return f'{self.left} | {self.right}'
+        return f'[{self.left} | {self.right}]'
 
 
 class IfNode(namedtuple('IfNode', ['left', 'right'])):
     def __str__(self):
-        return f'{self.left} -> {self.right}'
+        return f'[{self.left} -> {self.right}]'
 
 
 class NotNode(namedtuple('NotNode', ['operand'])):
     def __str__(self):
-        if isinstance(self.operand, VarNode):
-            return f'~{self.operand}'
-        else:
-            return f'~[{self.operand}]'
+        return f'~{self.operand}'
 
 
 class LambdaNode(namedtuple('LambdaNode', ['parameter', 'body'])):
     def __str__(self):
-        return f'L{self.parameter}.{self.body}'
+        return f'[L{self.parameter}.{self.body}]'
 
 
 class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
@@ -59,12 +56,12 @@ class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
 
 class AllNode(namedtuple('AllNode', ['symbol', 'body'])):
     def __str__(self):
-        return f'A{self.symbol}.{self.body}'
+        return f'[A{self.symbol}.{self.body}]'
 
 
 class ExistsNode(namedtuple('ExistsNode', ['symbol', 'body'])):
     def __str__(self):
-        return f'E{self.symbol}.{self.body}'
+        return f'[E{self.symbol}.{self.body}]'
 
 
 class TreeToFormula(Transformer):
