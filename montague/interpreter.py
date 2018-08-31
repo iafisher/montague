@@ -7,7 +7,7 @@ Version: August 2018
 from collections import namedtuple
 
 from .formula import (
-    AllNode, AndNode, CallNode, ExistsNode, IfNode, OrNode, VarNode,
+    AllNode, AndNode, CallNode, ExistsNode, IfNode, NotNode, OrNode, VarNode,
 )
 
 
@@ -32,6 +32,8 @@ def interpret_formula(formula, model):
         return arg in caller
     elif isinstance(formula, AllNode):
         old_value = model.assignments.get(formula.symbol)
+        # Check that every assignment of an individual to the universal variable
+        # results in a true proposition.
         for individual in model.individuals:
             model.assignments[formula.symbol] = individual
             if not interpret_formula(formula.body, model):
@@ -41,6 +43,8 @@ def interpret_formula(formula, model):
         return True
     elif isinstance(formula, ExistsNode):
         old_value = model.assignments.get(formula.symbol)
+        # Check that any assignment of an individual to the existential variable
+        # results in a true proposition.
         for individual in model.individuals:
             model.assignments[formula.symbol] = individual
             if interpret_formula(formula.body, model):
@@ -48,6 +52,8 @@ def interpret_formula(formula, model):
                 return True
         model.assignments[formula.symbol] = old_value
         return False
+    elif isinstance(formula, NotNode):
+        return not interpret_formula(formula.operand, model)
     else:
         # TODO: Handle LambdaNodes differently (they can't be interpreted, but
         # they should give a better error message).

@@ -1,7 +1,7 @@
 import unittest
 
 from montague.formula import (
-    AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
+    AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, NotNode, OrNode,
     TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
     TYPE_TRUTH_VALUE, TYPE_WORLD,
 )
@@ -57,9 +57,8 @@ class FormulaParseTest(unittest.TestCase):
         self.assertTupleEqual(tree, IfNode(VarNode('a'), VarNode('b')))
 
     def test_parsing_multi_implication(self):
-        tree = parse_formula('a -> b -> c')
         self.assertTupleEqual(
-            tree,
+            parse_formula('a -> b -> c'),
             IfNode(
                 VarNode('a'),
                 IfNode(
@@ -67,6 +66,24 @@ class FormulaParseTest(unittest.TestCase):
                     VarNode('c')
                 )
             )
+        )
+
+    def test_parsing_negation(self):
+        self.assertEqual(
+            parse_formula('~a'),
+            NotNode(VarNode('a'))
+        )
+
+    def test_parsing_negation_precedence(self):
+        self.assertEqual(
+            parse_formula('~a | b'),
+            OrNode(NotNode(VarNode('a')), VarNode('b'))
+        )
+
+    def test_parsing_negation_precedence2(self):
+        self.assertEqual(
+            parse_formula('~[a | b]'),
+            NotNode(OrNode(VarNode('a'), VarNode('b')))
         )
 
     def test_parsing_precedence(self):
@@ -390,6 +407,18 @@ class FormulaToStrTest(unittest.TestCase):
     def test_exists_to_str(self):
         unparsed = str(ExistsNode('x', CallNode(VarNode('P'), VarNode('x'))))
         self.assertEqual(unparsed, 'Ex.P(x)')
+
+    def test_not_to_str(self):
+        self.assertEqual(
+            str(NotNode(VarNode('x'))),
+            '~x'
+        )
+
+    def test_not_with_expr_to_str(self):
+        self.assertEqual(
+            str(NotNode(OrNode(VarNode('x'), VarNode('y')))),
+            '~[x | y]'
+        )
 
 
 class TypeToStrTest(unittest.TestCase):

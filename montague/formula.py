@@ -30,6 +30,14 @@ class IfNode(namedtuple('IfNode', ['left', 'right'])):
         return f'{self.left} -> {self.right}'
 
 
+class NotNode(namedtuple('NotNode', ['operand'])):
+    def __str__(self):
+        if isinstance(self.operand, VarNode):
+            return f'~{self.operand}'
+        else:
+            return f'~[{self.operand}]'
+
+
 class LambdaNode(namedtuple('LambdaNode', ['parameter', 'body'])):
     def __str__(self):
         return f'L{self.parameter}.{self.body}'
@@ -87,6 +95,9 @@ class TreeToFormula(Transformer):
             func = CallNode(func, matches[i])
         return func
 
+    def not_e(self, matches):
+        return NotNode(matches[1])
+
 
 formula_parser = Lark('''
     ?start: expr
@@ -95,7 +106,13 @@ formula_parser = Lark('''
 
     ?ifterm: term | term OR ifterm
     ?term: factor | factor AND term
-    ?factor: variable | "[" expr "]" | call | lambda_ | forall | exists
+    ?factor: variable
+           | "[" expr "]"
+           | call
+           | lambda_
+           | forall
+           | exists
+           | NOT factor  -> not_e
 
     call: variable "(" _arglist? ")" | "(" expr ")" "(" _arglist? ")"
     _arglist: ( expr "," )* expr
@@ -110,6 +127,7 @@ formula_parser = Lark('''
     OR: "|"
     AND: "&"
     IMPLIES: "->"
+    NOT: "~"
 
     %import common.WS
     %ignore WS
