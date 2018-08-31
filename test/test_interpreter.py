@@ -32,6 +32,7 @@ class InterpreterTest(unittest.TestCase):
     def test_john_is_bad_is_false(self):
         formula = CallNode(VarNode('Bad'), VarNode('j'))
         self.assertFalse(interpret_formula(formula, test_model))
+        self.assertTrue(interpret_formula(NotNode(formula), test_model))
 
     def test_mary_is_bad_and_john_is_good_is_true(self):
         formula = AndNode(
