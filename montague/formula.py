@@ -13,14 +13,30 @@ from lark import Lark, Transformer
 # Below are defined the classes to represent logical formulas as trees.
 
 
-class VarNode(namedtuple('VarNode', 'value')):
+class Node:
+    def replace_variable(self, variable, replacement):
+        """Replace all unbound instances of `variable`, a string, with
+        `replacement`.
+
+        The default implementation recursively replaces the variable in all
+        subchildren. Subclasses may need to override this implementation.
+        """
+        return self.__class__(
+            *[c.replace_variable(variable, replacement) for c in self]
+        )
+
+
+class VarNode(Node, namedtuple('VarNode', 'value')):
     prec = 1
 
     def __str__(self):
         return self.value
 
+    def replace_variable(self, variable, replacement):
+        return self if variable != self.value else replacement
 
-class AndNode(namedtuple('AndNode', ['left', 'right'])):
+
+class AndNode(Node, namedtuple('AndNode', ['left', 'right'])):
     prec = 2
 
     def __str__(self):
@@ -30,7 +46,7 @@ class AndNode(namedtuple('AndNode', ['left', 'right'])):
         return f'{left} & {right}'
 
 
-class OrNode(namedtuple('OrNode', ['left', 'right'])):
+class OrNode(Node, namedtuple('OrNode', ['left', 'right'])):
     prec = 3
 
     def __str__(self):
@@ -39,7 +55,7 @@ class OrNode(namedtuple('OrNode', ['left', 'right'])):
         return f'{left} | {right}'
 
 
-class IfNode(namedtuple('IfNode', ['left', 'right'])):
+class IfNode(Node, namedtuple('IfNode', ['left', 'right'])):
     prec = 4
 
     def __str__(self):
@@ -48,7 +64,7 @@ class IfNode(namedtuple('IfNode', ['left', 'right'])):
         return f'{left} -> {right}'
 
 
-class NotNode(namedtuple('NotNode', ['operand'])):
+class NotNode(Node, namedtuple('NotNode', ['operand'])):
     prec = 1
 
     def __str__(self):
@@ -56,14 +72,23 @@ class NotNode(namedtuple('NotNode', ['operand'])):
         return f'~{operand}'
 
 
-class LambdaNode(namedtuple('LambdaNode', ['parameter', 'body'])):
+class LambdaNode(Node, namedtuple('LambdaNode', ['parameter', 'body'])):
     prec = 5
 
     def __str__(self):
         return f'L{self.parameter}.{self.body}'
 
+    def replace_variable(self, variable, replacement):
+        if variable != self.parameter:
+            return LambdaNode(
+                self.parameter,
+                self.body.replace_variable(variable, replacement)
+            )
+        else:
+            return self
 
-class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
+
+class CallNode(Node, namedtuple('CallNode', ['caller', 'arg'])):
     prec = 1
 
     def __str__(self):
@@ -83,18 +108,36 @@ class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
             return f'({func})({args})'
 
 
-class AllNode(namedtuple('AllNode', ['symbol', 'body'])):
+class AllNode(Node, namedtuple('AllNode', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
         return f'A{self.symbol}.{self.body}'
 
+    def replace_variable(self, variable, replacement):
+        if variable != self.symbol:
+            return AllNode(
+                self.symbol,
+                self.body.replace_variable(variable, replacement)
+            )
+        else:
+            return self
 
-class ExistsNode(namedtuple('ExistsNode', ['symbol', 'body'])):
+
+class ExistsNode(Node, namedtuple('ExistsNode', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
         return f'E{self.symbol}.{self.body}'
+
+    def replace_variable(self, variable, replacement):
+        if variable != self.symbol:
+            return ExistsNode(
+                self.symbol,
+                self.body.replace_variable(variable, replacement)
+            )
+        else:
+            return self
 
 
 class TreeToFormula(Transformer):

@@ -70,62 +70,6 @@ def can_combine(term1, term2):
     return isinstance(term1.type, TypeNode) and term1.type.left == term2.type
 
 
-def replace_variable(formula, variable, replacement):
-    """Replace all unbound instances of `variable`, a string, with `replacement`
-    in `formula`.
-    """
-    if isinstance(formula, VarNode):
-        return replacement if formula.value == variable else formula
-    elif isinstance(formula, AndNode):
-        return AndNode(
-            replace_variable(formula.left, variable, replacement),
-            replace_variable(formula.right, variable, replacement)
-        )
-    elif isinstance(formula, OrNode):
-        return OrNode(
-            replace_variable(formula.left, variable, replacement),
-            replace_variable(formula.right, variable, replacement)
-        )
-    elif isinstance(formula, IfNode):
-        return IfNode(
-            replace_variable(formula.left, variable, replacement),
-            replace_variable(formula.right, variable, replacement)
-        )
-    elif isinstance(formula, LambdaNode):
-        if formula.parameter != variable:
-            return LambdaNode(
-                formula.parameter,
-                replace_variable(formula.body, variable, replacement)
-            )
-        else:
-            return formula
-    elif isinstance(formula, CallNode):
-        return CallNode(
-            replace_variable(formula.caller, variable, replacement),
-            replace_variable(formula.arg, variable, replacement)
-        )
-    elif isinstance(formula, AllNode):
-        if formula.symbol != variable:
-            return AllNode(
-                formula.symbol,
-                replace_variable(formula.body, variable, replacement)
-            )
-        else:
-            return formula
-    elif isinstance(formula, ExistsNode):
-        if formula.symbol != variable:
-            return ExistsNode(
-                formula.symbol,
-                replace_variable(formula.body, variable, replacement)
-            )
-        else:
-            return formula
-    elif isinstance(formula, VarNode):
-        return formula
-    else:
-        raise Exception('Unhandled class', formula.__class__)
-
-
 def simplify_formula(tree):
     """Simplify the tree by lambda conversion."""
     if isinstance(tree, CallNode) and not isinstance(tree.caller, VarNode):
@@ -133,7 +77,7 @@ def simplify_formula(tree):
         arg = simplify_formula(tree.arg)
         if isinstance(caller, LambdaNode):
             return simplify_formula(
-                replace_variable(caller.body, caller.parameter, arg)
+                caller.body.replace_variable(caller.parameter, arg)
             )
         else:
             return CallNode(tree.caller, arg)

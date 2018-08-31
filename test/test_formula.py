@@ -474,3 +474,75 @@ class TypeToStrTest(unittest.TestCase):
             )
         )
         self.assertEqual(typ.concise_str(), '<v, <et, et>>')
+
+
+class ReplacerTest(unittest.TestCase):
+    def test_simple_replace_variable(self):
+        self.assertTupleEqual(
+            VarNode('x').replace_variable('x', VarNode('y')),
+            VarNode('y')
+        )
+
+    def test_replace_variable_in_and_or(self):
+        tree = AndNode(OrNode(VarNode('x'), VarNode('y')), VarNode('z'))
+        self.assertTupleEqual(
+            tree.replace_variable('x', VarNode("x'")),
+            AndNode(OrNode(VarNode("x'"), VarNode('y')), VarNode('z'))
+        )
+
+    def test_replace_predicate(self):
+        tree = CallNode(VarNode('P'), VarNode('x'))
+        self.assertTupleEqual(
+            tree.replace_variable('P', VarNode('Good')),
+            CallNode(VarNode('Good'), VarNode('x'))
+        )
+
+    def test_replace_variable_in_quantifiers(self):
+        tree = AllNode('x',
+            OrNode(
+                AndNode(
+                    AllNode('b', VarNode('b')),
+                    ExistsNode('b', VarNode('b')),
+                ),
+                ExistsNode('y', VarNode('b'))
+            )
+        )
+        self.assertTupleEqual(
+            tree.replace_variable('b', VarNode('bbb')),
+            AllNode(
+                'x',
+                OrNode(
+                    AndNode(
+                        AllNode('b', VarNode('b')),
+                        ExistsNode('b', VarNode('b')),
+                    ),
+                    ExistsNode('y', VarNode('bbb'))
+                )
+            )
+        )
+
+
+    def test_recursive_replace_variable(self):
+        tree = CallNode(
+            CallNode(
+                CallNode(
+                    VarNode('BFP'),
+                    VarNode('x')
+                ),
+                LambdaNode('x', VarNode('x'))  # This should not be replaced.
+            ),
+            AndNode(VarNode('x'), VarNode('y'))
+        )
+        self.assertTupleEqual(
+            tree.replace_variable('x', VarNode('j')),
+            CallNode(
+                CallNode(
+                    CallNode(
+                        VarNode('BFP'),
+                        VarNode('j')
+                    ),
+                    LambdaNode('x', VarNode('x'))
+                ),
+                AndNode(VarNode('j'), VarNode('y'))
+            )
+        )
