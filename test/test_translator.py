@@ -3,8 +3,8 @@ import os
 import unittest
 
 from montague.formula import (
-    And, Call, Exists, ForAll, IfThen, Lambda, Or, Type, Var, parse_formula,
-    parse_type, TYPE_ENTITY, TYPE_EVENT, TYPE_TRUTH_VALUE,
+    And, Call, ComplexType, Exists, ForAll, IfThen, Lambda, Or, Var,
+    parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT, TYPE_TRUTH_VALUE,
 )
 from montague.translator import (
     LexiconEntry, LexiconError, TranslationError, can_combine, combine,
@@ -12,7 +12,7 @@ from montague.translator import (
 )
 
 
-TYPE_ET = Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+TYPE_ET = ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 
 TEST_LEXICON = {
@@ -22,7 +22,7 @@ TEST_LEXICON = {
   ),
   "is": LexiconEntry(
       Lambda('P', Var('P')),
-      Type(TYPE_ET, TYPE_ET)
+      ComplexType(TYPE_ET, TYPE_ET)
   ),
   "good": LexiconEntry(
       Lambda('x', Call(Var('Good'), Var('x'))),
@@ -42,9 +42,9 @@ TEST_LEXICON = {
               )
           )
       ),
-      Type(
+      ComplexType(
           TYPE_ET,
-          Type(TYPE_ET, TYPE_TRUTH_VALUE)
+          ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)
       )
   ),
   "child": LexiconEntry(
@@ -131,7 +131,7 @@ class CombinerTest(unittest.TestCase):
             combine(every, child),
             LexiconEntry(
                 Call(every.denotation, child.denotation),
-                Type(TYPE_ET, TYPE_TRUTH_VALUE)
+                ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)
             )
         )
 

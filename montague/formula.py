@@ -262,7 +262,7 @@ def parse_formula(formula):
 # Below are defined the classes to represent semantic types as trees.
 
 
-class Type(namedtuple('Type', ['left', 'right'])):
+class ComplexType(namedtuple('ComplexType', ['left', 'right'])):
     def __str__(self):
         return f'<{self.left}, {self.right}>'
 
@@ -270,7 +270,7 @@ class Type(namedtuple('Type', ['left', 'right'])):
         """Convert the type to a string, recursively abbreviating '<x, y>' as
         'xy' as long as 'x' and 'y' are atomic types.
 
-           >>> typ = Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+           >>> typ = ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
            >>> str(typ)
            '<e, t>'
            >>> typ.concise_str()
@@ -296,15 +296,15 @@ TYPE_WORLD = AtomicType('s')
 
 
 class TreeToType(Transformer):
-    """Transform Lark's parse tree into a type tree with Type and AtomicType
-    objects.
+    """Transform Lark's parse tree into a type tree with ComplexType and
+    AtomicType objects.
     """
     def type(self, matches):
         if len(matches) == 2:
-            return Type(matches[0], matches[1])
+            return ComplexType(matches[0], matches[1])
         elif len(matches) == 1:
             if len(matches[0]) == 2:
-                return Type(matches[0][0], matches[0][1])
+                return ComplexType(matches[0][0], matches[0][1])
             else:
                 return matches[0]
         else:
@@ -324,7 +324,7 @@ type_parser = Lark('''
 
 
 def parse_type(typestring):
-    """Parse `typestring` into a tree of Type and AtomicType objects.
+    """Parse `typestring` into a tree of ComplexType and AtomicType objects.
 
     If the string cannot be parsed, a LarkError is raised.
     """

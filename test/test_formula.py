@@ -1,9 +1,9 @@
 import unittest
 
 from montague.formula import (
-    And, Call, Exists, ForAll, IfAndOnlyIf, IfThen, Lambda, Not, Or, Type, Var,
-    parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT, TYPE_TRUTH_VALUE,
-    TYPE_WORLD,
+    And, Call, ComplexType, Exists, ForAll, IfAndOnlyIf, IfThen, Lambda, Not,
+    Or, Var, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
+    TYPE_TRUTH_VALUE, TYPE_WORLD,
 )
 
 from lark.exceptions import LarkError
@@ -277,27 +277,27 @@ class TypeParseTest(unittest.TestCase):
     def test_parsing_compound_type(self):
         self.assertTupleEqual(
             parse_type('<e, t>'),
-            Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+            ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
         )
 
     def test_parsing_abbreviated_compound_types(self):
         self.assertTupleEqual(
             parse_type('et'),
-            Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+            ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
         )
         self.assertTupleEqual(
             parse_type('vt'),
-            Type(TYPE_EVENT, TYPE_TRUTH_VALUE)
+            ComplexType(TYPE_EVENT, TYPE_TRUTH_VALUE)
         )
 
     def test_parsing_big_compound_type(self):
         self.assertTupleEqual(
             parse_type('<<e, t>, <e, <s, t>>>'),
-            Type(
-                Type(TYPE_ENTITY, TYPE_TRUTH_VALUE),
-                Type(
+            ComplexType(
+                ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
+                ComplexType(
                     TYPE_ENTITY,
-                    Type(TYPE_WORLD, TYPE_TRUTH_VALUE)
+                    ComplexType(TYPE_WORLD, TYPE_TRUTH_VALUE)
                 )
             )
         )
@@ -305,11 +305,11 @@ class TypeParseTest(unittest.TestCase):
     def test_parsing_big_compound_type_with_abbreviations(self):
         self.assertTupleEqual(
             parse_type('<et, <e, st>>'),
-            Type(
-                Type(TYPE_ENTITY, TYPE_TRUTH_VALUE),
-                Type(
+            ComplexType(
+                ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
+                ComplexType(
                     TYPE_ENTITY,
-                    Type(TYPE_WORLD, TYPE_TRUTH_VALUE)
+                    ComplexType(TYPE_WORLD, TYPE_TRUTH_VALUE)
                 )
             )
         )
@@ -463,16 +463,19 @@ class TypeToStrTest(unittest.TestCase):
         self.assertEqual(str(TYPE_WORLD), 's')
 
     def test_recursive_type_to_str(self):
-        self.assertEqual(str(Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)), '<e, t>')
+        self.assertEqual(
+            str(ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)),
+            '<e, t>'
+        )
 
     def test_deeply_recursive_type_to_str(self):
         self.assertEqual(
             str(
-                Type(
+                ComplexType(
                     TYPE_EVENT,
-                    Type(
-                        Type(TYPE_ENTITY, TYPE_TRUTH_VALUE),
-                        Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+                    ComplexType(
+                        ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
+                        ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
                     )
                 )
             ),
@@ -480,15 +483,15 @@ class TypeToStrTest(unittest.TestCase):
         )
 
     def test_recursive_type_to_concise_str(self):
-        typ = Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+        typ = ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
         self.assertEqual(typ.concise_str(), 'et')
 
     def test_deeply_recursive_type_to_concise_str(self):
-        typ = Type(
+        typ = ComplexType(
             TYPE_EVENT,
-            Type(
-                Type(TYPE_ENTITY, TYPE_TRUTH_VALUE),
-                Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+            ComplexType(
+                ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
+                ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
             )
         )
         self.assertEqual(typ.concise_str(), '<v, <et, et>>')

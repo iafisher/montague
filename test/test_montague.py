@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from montague.formula import (
-    Call, Lambda, Type, Var, TYPE_ENTITY, TYPE_TRUTH_VALUE,
+    Call, ComplexType, Lambda, Var, TYPE_ENTITY, TYPE_TRUTH_VALUE,
 )
 from montague.montague import ShellState, execute_command, HELP_MESSAGE
 from montague.translator import LexiconEntry
@@ -11,7 +11,7 @@ from montague.translator import LexiconEntry
 TEST_LEXICON = {
   "good": LexiconEntry(
       Lambda('x', Call(Var('Good'), Var('x'))),
-      Type(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+      ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
   ),
 }
 

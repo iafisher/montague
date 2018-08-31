@@ -7,7 +7,7 @@ from collections import namedtuple
 
 from lark.exceptions import LarkError
 
-from .formula import Call, Type, parse_formula, parse_type
+from .formula import Call, ComplexType, parse_formula, parse_type
 
 
 LexiconEntry = namedtuple('LexiconEntry', ['denotation', 'type'])
@@ -64,7 +64,7 @@ def combine(term1, term2):
 
 def can_combine(term1, term2):
     """Return True if the terms can be combined."""
-    return isinstance(term1.type, Type) and term1.type.left == term2.type
+    return isinstance(term1.type, ComplexType) and term1.type.left == term2.type
 
 
 class CombinationError(Exception):
