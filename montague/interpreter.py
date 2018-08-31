@@ -7,7 +7,8 @@ Version: August 2018
 from collections import namedtuple
 
 from .formula import (
-    AllNode, AndNode, CallNode, ExistsNode, IfNode, NotNode, OrNode, VarNode,
+    ForAllNode, AndNode, CallNode, ExistsNode, IfThenNode, NotNode, OrNode,
+    VarNode,
 )
 
 
@@ -26,14 +27,14 @@ def interpret_formula(formula, model):
     elif isinstance(formula, OrNode):
         return interpret_formula(formula.left, model) \
             or interpret_formula(formula.right, model)
-    elif isinstance(formula, IfNode):
+    elif isinstance(formula, IfThenNode):
         return not interpret_formula(formula.left, model) \
             or interpret_formula(formula.right, model)
     elif isinstance(formula, CallNode):
         caller = interpret_formula(formula.caller, model)
         arg = interpret_formula(formula.arg, model)
         return arg in caller
-    elif isinstance(formula, AllNode):
+    elif isinstance(formula, ForAllNode):
         old_value = model.assignments.get(formula.symbol)
         # Check that every assignment of an individual to the universal variable
         # results in a true proposition.

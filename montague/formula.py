@@ -65,7 +65,7 @@ class OrNode(Node, namedtuple('OrNode', ['left', 'right'])):
         return f'{left} | {right}'
 
 
-class IfNode(Node, namedtuple('IfNode', ['left', 'right'])):
+class IfThenNode(Node, namedtuple('IfThenNode', ['left', 'right'])):
     prec = 4
 
     def __str__(self):
@@ -128,7 +128,7 @@ class CallNode(Node, namedtuple('CallNode', ['caller', 'arg'])):
             return CallNode(self.caller, arg)
 
 
-class AllNode(Node, namedtuple('AllNode', ['symbol', 'body'])):
+class ForAllNode(Node, namedtuple('ForAllNode', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
@@ -136,7 +136,7 @@ class AllNode(Node, namedtuple('AllNode', ['symbol', 'body'])):
 
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
-            return AllNode(
+            return ForAllNode(
                 self.symbol,
                 self.body.replace_variable(variable, replacement)
             )
@@ -166,7 +166,7 @@ class TreeToFormula(Transformer):
     """
 
     def expr(self, matches):
-        return IfNode(matches[0], matches[2])
+        return IfThenNode(matches[0], matches[2])
 
     def ifterm(self, matches):
         return OrNode(matches[0], matches[2])
@@ -181,7 +181,7 @@ class TreeToFormula(Transformer):
         return LambdaNode(matches[0], matches[1])
 
     def forall(self, matches):
-        return AllNode(matches[0], matches[1])
+        return ForAllNode(matches[0], matches[1])
 
     def exists(self, matches):
         return ExistsNode(matches[0], matches[1])

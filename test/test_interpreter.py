@@ -1,7 +1,7 @@
 import unittest
 
 from montague.formula import (
-    AllNode, AndNode, CallNode, ExistsNode, NotNode, VarNode,
+    ForAllNode, AndNode, CallNode, ExistsNode, NotNode, VarNode,
 )
 from montague.interpreter import WorldModel, interpret_formula
 
@@ -42,11 +42,11 @@ class InterpreterTest(unittest.TestCase):
         self.assertTrue(interpret_formula(formula, test_model))
 
     def test_everyone_is_bad_is_false(self):
-        formula = AllNode('x', CallNode(VarNode('Bad'), VarNode('x')))
+        formula = ForAllNode('x', CallNode(VarNode('Bad'), VarNode('x')))
         self.assertFalse(interpret_formula(formula, test_model))
 
     def test_everyone_is_human_is_true(self):
-        formula = AllNode('x', CallNode(VarNode('Human'), VarNode('x')))
+        formula = ForAllNode('x', CallNode(VarNode('Human'), VarNode('x')))
         self.assertTrue(interpret_formula(formula, test_model))
 
     def test_someone_is_bad_is_true(self):

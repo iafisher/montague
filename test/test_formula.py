@@ -1,9 +1,9 @@
 import unittest
 
 from montague.formula import (
-    AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, NotNode, OrNode,
-    TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
-    TYPE_TRUTH_VALUE, TYPE_WORLD,
+    ForAllNode, AndNode, CallNode, ExistsNode, IfThenNode, LambdaNode, NotNode,
+    OrNode, TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY,
+    TYPE_EVENT, TYPE_TRUTH_VALUE, TYPE_WORLD,
 )
 
 from lark.exceptions import LarkError
@@ -58,15 +58,15 @@ class FormulaParseTest(unittest.TestCase):
     def test_parsing_implication(self):
         self.assertTupleEqual(
             parse_formula('a -> b'),
-            IfNode(VarNode('a'), VarNode('b'))
+            IfThenNode(VarNode('a'), VarNode('b'))
         )
 
     def test_parsing_multi_implication(self):
         self.assertTupleEqual(
             parse_formula('a -> b -> c'),
-            IfNode(
+            IfThenNode(
                 VarNode('a'),
-                IfNode(
+                IfThenNode(
                     VarNode('b'),
                     VarNode('c')
                 )
@@ -91,7 +91,7 @@ class FormulaParseTest(unittest.TestCase):
     def test_parsing_precedence(self):
         self.assertTupleEqual(
             parse_formula('x & y | z -> m'),
-            IfNode(
+            IfThenNode(
                 OrNode(
                     AndNode(VarNode('x'), VarNode('y')),
                     VarNode('z')
@@ -103,7 +103,7 @@ class FormulaParseTest(unittest.TestCase):
     def test_parsing_precedence2(self):
         self.assertTupleEqual(
             parse_formula('x | y -> m & z'),
-            IfNode(
+            IfThenNode(
                 OrNode(
                     VarNode('x'),
                     VarNode('y'),
@@ -196,13 +196,13 @@ class FormulaParseTest(unittest.TestCase):
     def test_parsing_forall(self):
         self.assertTupleEqual(
             parse_formula('Ax.x & y'),
-            AllNode('x', AndNode(VarNode('x'), VarNode('y')))
+            ForAllNode('x', AndNode(VarNode('x'), VarNode('y')))
         )
 
     def test_parsing_forall2(self):
         self.assertTupleEqual(
             parse_formula('A x.x & y'),
-            AllNode('x', AndNode(VarNode('x'), VarNode('y')))
+            ForAllNode('x', AndNode(VarNode('x'), VarNode('y')))
         )
 
     def test_parsing_exists(self):
@@ -343,7 +343,7 @@ class FormulaToStrTest(unittest.TestCase):
         self.assertEqual(str(OrNode(VarNode('a'), VarNode('b'))), 'a | b')
 
     def test_if_to_str(self):
-        self.assertEqual(str(IfNode(VarNode('a'), VarNode('b'))), 'a -> b')
+        self.assertEqual(str(IfThenNode(VarNode('a'), VarNode('b'))), 'a -> b')
 
     def test_lambda_to_str(self):
         self.assertEqual(
@@ -367,7 +367,7 @@ class FormulaToStrTest(unittest.TestCase):
 
     def test_forall_to_str(self):
         self.assertEqual(
-            str(AllNode('x', CallNode(VarNode('P'), VarNode('x')))),
+            str(ForAllNode('x', CallNode(VarNode('P'), VarNode('x')))),
             'Ax.P(x)'
         )
 
@@ -405,7 +405,7 @@ class FormulaToStrTest(unittest.TestCase):
         self.assertEqual(
             str(
                 AndNode(
-                    AllNode('x', VarNode('x')),
+                    ForAllNode('x', VarNode('x')),
                     ExistsNode('x', VarNode('x'))
                 )
             ),
@@ -498,10 +498,10 @@ class ReplacerTest(unittest.TestCase):
         )
 
     def test_replace_variable_in_quantifiers(self):
-        tree = AllNode('x',
+        tree = ForAllNode('x',
             OrNode(
                 AndNode(
-                    AllNode('b', VarNode('b')),
+                    ForAllNode('b', VarNode('b')),
                     ExistsNode('b', VarNode('b')),
                 ),
                 ExistsNode('y', VarNode('b'))
@@ -509,11 +509,11 @@ class ReplacerTest(unittest.TestCase):
         )
         self.assertTupleEqual(
             tree.replace_variable('b', VarNode('bbb')),
-            AllNode(
+            ForAllNode(
                 'x',
                 OrNode(
                     AndNode(
-                        AllNode('b', VarNode('b')),
+                        ForAllNode('b', VarNode('b')),
                         ExistsNode('b', VarNode('b')),
                     ),
                     ExistsNode('y', VarNode('bbb'))

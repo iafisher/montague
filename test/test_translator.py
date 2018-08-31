@@ -3,7 +3,7 @@ import os
 import unittest
 
 from montague.formula import (
-    AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
+    ForAllNode, AndNode, CallNode, ExistsNode, IfThenNode, LambdaNode, OrNode,
     TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
     TYPE_TRUTH_VALUE,
 )
@@ -34,9 +34,9 @@ TEST_LEXICON = {
           'P',
           LambdaNode(
               'Q',
-              AllNode(
+              ForAllNode(
                   'x',
-                  IfNode(
+                  IfThenNode(
                       CallNode(VarNode('P'), VarNode('x')),
                       CallNode(VarNode('Q'), VarNode('x'))
                   )
@@ -91,9 +91,9 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('every child is good', TEST_LEXICON),
             LexiconEntry(
-                AllNode(
+                ForAllNode(
                     'x',
-                    IfNode(
+                    IfThenNode(
                         CallNode(VarNode('Child'), VarNode('x')),
                         CallNode(VarNode('Good'), VarNode('x'))
                     )
@@ -223,9 +223,9 @@ class SimplifierTest(unittest.TestCase):
             tree.simplify(),
             LambdaNode(
                 'Q',
-                AllNode(
+                ForAllNode(
                     'x',
-                    IfNode(
+                    IfThenNode(
                         CallNode(VarNode('Child'), VarNode('x')),
                         CallNode(VarNode('Q'), VarNode('x'))
                     )
