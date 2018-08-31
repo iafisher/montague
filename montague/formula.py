@@ -10,6 +10,9 @@ from enum import Enum
 from lark import Lark, Transformer
 
 
+# Below are defined the classes to represent logical formulas as trees.
+
+
 class VarNode(namedtuple('VarNode', 'value')):
     prec = 1
 
@@ -21,6 +24,7 @@ class AndNode(namedtuple('AndNode', ['left', 'right'])):
     prec = 2
 
     def __str__(self):
+        # wrapb applies brackets if needed for the proper precedence.
         left = wrapb(self, self.left, False)
         right = wrapb(self, self.right, True)
         return f'{left} & {right}'
@@ -63,6 +67,9 @@ class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
     prec = 1
 
     def __str__(self):
+        # To make string representations more natural, F(x)(y) is printed as
+        # F(x, y), which is why this method is more complicated than you would
+        # expect.
         args = [str(self.arg)]
         func = self.caller
         while isinstance(func, CallNode):
@@ -72,6 +79,7 @@ class CallNode(namedtuple('CallNode', ['caller', 'arg'])):
         if isinstance(func, VarNode):
             return f'{func}({args})'
         else:
+            # Syntactically, a non-
             return f'({func})({args})'
 
 
@@ -90,6 +98,10 @@ class ExistsNode(namedtuple('ExistsNode', ['symbol', 'body'])):
 
 
 class TreeToFormula(Transformer):
+    """Transform Lark's parse tree into a formula tree with objects of the Node
+    classes.
+    """
+
     def expr(self, matches):
         return IfNode(matches[0], matches[2])
 
@@ -112,6 +124,9 @@ class TreeToFormula(Transformer):
         return ExistsNode(matches[0], matches[1])
 
     def call(self, matches):
+        # The parse tree allows n-ary functions but the AST only allows unary
+        # functions. This methods converts the former to the latter, e.g.
+        # F(x, y, z) becomes F(x)(y)(z), three nested CallNodes.
         func = CallNode(matches[0], matches[1])
         for i in range(2, len(matches)):
             func = CallNode(func, matches[i])
@@ -121,6 +136,7 @@ class TreeToFormula(Transformer):
         return NotNode(matches[1])
 
 
+# The grammar of the logical language.
 formula_parser = Lark('''
     ?start: expr
 
@@ -157,7 +173,14 @@ formula_parser = Lark('''
 
 
 def parse_formula(formula):
+    """Parse `formula`, a string, into a tree of objects of the Node classes.
+
+    If the string cannot be parsed, a LarkError is raised.
+    """
     return formula_parser.parse(formula)
+
+
+# Below are defined the classes to represent semantic types as trees.
 
 
 class TypeNode(namedtuple('TypeNode', ['left', 'right'])):
@@ -165,6 +188,15 @@ class TypeNode(namedtuple('TypeNode', ['left', 'right'])):
         return f'<{self.left}, {self.right}>'
 
     def concise_str(self):
+        """Convert the type to a string, recursively abbreviating '<x, y>' as
+        'xy' as long as 'x' and 'y' are atomic types.
+
+           >>> typ = TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+           >>> str(typ)
+           '<e, t>'
+           >>> typ.concise_str()
+           'et'
+        """
         left = self.left
         if isinstance(self.left, AtomicType) \
            and isinstance(self.right, AtomicType):
@@ -178,6 +210,7 @@ class AtomicType(str):
         return self
 
 
+# Constants for the recognized atomic types.
 TYPE_ENTITY = AtomicType('e')
 TYPE_TRUTH_VALUE = AtomicType('t')
 TYPE_EVENT = AtomicType('v')
@@ -185,6 +218,9 @@ TYPE_WORLD = AtomicType('s')
 
 
 class TreeToType(Transformer):
+    """Transform Lark's parse tree into a type tree with TypeNode and AtomicType
+    objects.
+    """
     def type(self, matches):
         if len(matches) == 2:
             return TypeNode(matches[0], matches[1])
@@ -195,6 +231,7 @@ class TreeToType(Transformer):
                 return matches[0]
 
 
+# The grammar of the type mini-language.
 type_parser = Lark('''
     ?start: type
 
@@ -207,10 +244,17 @@ type_parser = Lark('''
 
 
 def parse_type(typestring):
+    """Parse `typestring` into a tree of TypeNode and AtomicType objects.
+
+    If the string cannot be parsed, a LarkError is raised.
+    """
     return type_parser.parse(typestring)
 
 
 def wrapb(parent, child, right):
+    """Return the child node as a string, wrapped in brackets if its precedence
+    is higher than the parent node.
+    """
     if child.prec > parent.prec or child.prec == parent.prec and right:
         return f'[{child}]'
     else:

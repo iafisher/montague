@@ -15,6 +15,9 @@ WorldModel = namedtuple('WorldModel', ['individuals', 'assignments'])
 
 
 def interpret_formula(formula, model):
+    """Given a logical formula and a model of the world, return the formula's
+    denotation in the model.
+    """
     if isinstance(formula, VarNode):
         return model.assignments[formula.value]
     elif isinstance(formula, AndNode):

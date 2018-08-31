@@ -17,6 +17,11 @@ LexiconEntry = namedtuple('LexiconEntry', ['denotation', 'type'])
 
 
 def translate_sentence(sentence, lexicon):
+    """Translate `sentence`, a string containing English text, into a logical
+    formula which represents its truth conditions.
+
+    If the sentence cannot be translated, a TranslationError is raised.
+    """
     try:
         terms = [lexicon[t] for t in sentence.split()]
     except KeyError as e:
@@ -43,6 +48,11 @@ def translate_sentence(sentence, lexicon):
 
 
 def combine(term1, term2):
+    """Attempt to combine the two terms by function application. If the terms'
+    types are compatible, then a single term representing the denotation of the
+    two terms combined is returned. If the types are not compatible, a
+    CombinationError is raised.
+    """
     if can_combine(term1, term2):
         pass
     elif can_combine(term2, term1):
@@ -56,10 +66,14 @@ def combine(term1, term2):
 
 
 def can_combine(term1, term2):
+    """Return True if the terms can be combined."""
     return isinstance(term1.type, TypeNode) and term1.type.left == term2.type
 
 
 def replace_variable(formula, variable, replacement):
+    """Replace all unbound instances of `variable`, a string, with `replacement`
+    in `formula`.
+    """
     if isinstance(formula, VarNode):
         return replacement if formula.value == variable else formula
     elif isinstance(formula, AndNode):
@@ -113,6 +127,7 @@ def replace_variable(formula, variable, replacement):
 
 
 def simplify_formula(tree):
+    """Simplify the tree by lambda conversion."""
     if isinstance(tree, CallNode) and not isinstance(tree.caller, VarNode):
         caller = simplify_formula(tree.caller)
         arg = simplify_formula(tree.arg)
@@ -144,6 +159,10 @@ class LexiconError(Exception):
 
 
 def load_lexicon(lexicon_json):
+    """Load the lexicon from a dictionary.
+
+    If the lexicon is ill-formatted, a LexiconError is raised.
+    """
     return {k: load_lexical_entry(k, v) for k, v in lexicon_json.items()}
 
 
