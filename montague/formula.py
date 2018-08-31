@@ -141,6 +141,7 @@ class AtomicType(str):
 TYPE_ENTITY = AtomicType('e')
 TYPE_TRUTH_VALUE = AtomicType('t')
 TYPE_EVENT = AtomicType('v')
+TYPE_WORLD = AtomicType('s')
 
 
 class TreeToType(Transformer):
@@ -158,7 +159,7 @@ type_parser = Lark('''
     ?start: type
 
     type: "<" type "," type ">"
-        | /[evt]{1,2}/
+        | /[evst]{1,2}/
 
     %import common.WS
     %ignore WS

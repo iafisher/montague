@@ -3,7 +3,7 @@ import unittest
 from montague.formula import (
     AllNode, AndNode, CallNode, ExistsNode, IfNode, LambdaNode, OrNode,
     TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
-    TYPE_TRUTH_VALUE,
+    TYPE_TRUTH_VALUE, TYPE_WORLD,
 )
 
 from lark.exceptions import LarkError
@@ -251,25 +251,27 @@ class FormulaParseErrorTest(unittest.TestCase):
 
 class TypeParseTest(unittest.TestCase):
     def test_parsing_atomic_types(self):
-        tree = parse_type('e')
-        self.assertEqual(tree, TYPE_ENTITY)
-        tree = parse_type('t')
-        self.assertEqual(tree, TYPE_TRUTH_VALUE)
-        tree = parse_type('v')
-        self.assertEqual(tree, TYPE_EVENT)
+        self.assertEqual(parse_type('e'), TYPE_ENTITY)
+        self.assertEqual(parse_type('t'), TYPE_TRUTH_VALUE)
+        self.assertEqual(parse_type('v'), TYPE_EVENT)
+        self.assertEqual(parse_type('s'), TYPE_WORLD)
 
     def test_parsing_compound_type(self):
         tree = parse_type('<e, t>')
         self.assertTupleEqual(tree, TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE))
 
     def test_parsing_abbreviated_compound_types(self):
-        tree = parse_type('et')
-        self.assertTupleEqual(tree, TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE))
-        tree = parse_type('vt')
-        self.assertTupleEqual(tree, TypeNode(TYPE_EVENT, TYPE_TRUTH_VALUE))
+        self.assertTupleEqual(
+            parse_type('et'),
+            TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+        )
+        self.assertTupleEqual(
+            parse_type('vt'),
+            TypeNode(TYPE_EVENT, TYPE_TRUTH_VALUE)
+        )
 
     def test_parsing_big_compound_type(self):
-        tree = parse_type('<<e, t>, <e, <e, t>>>')
+        tree = parse_type('<<e, t>, <e, <s, t>>>')
         self.assertTupleEqual(
             tree,
             TypeNode(
@@ -280,7 +282,7 @@ class TypeParseTest(unittest.TestCase):
                 TypeNode(
                     TYPE_ENTITY,
                     TypeNode(
-                        TYPE_ENTITY,
+                        TYPE_WORLD,
                         TYPE_TRUTH_VALUE
                     )
                 )
@@ -288,7 +290,7 @@ class TypeParseTest(unittest.TestCase):
         )
 
     def test_parsing_big_compound_type_with_abbreviations(self):
-        tree = parse_type('<et, <e, et>>')
+        tree = parse_type('<et, <e, st>>')
         self.assertTupleEqual(
             tree,
             TypeNode(
@@ -299,7 +301,7 @@ class TypeParseTest(unittest.TestCase):
                 TypeNode(
                     TYPE_ENTITY,
                     TypeNode(
-                        TYPE_ENTITY,
+                        TYPE_WORLD,
                         TYPE_TRUTH_VALUE
                     )
                 )
@@ -399,6 +401,9 @@ class TypeToStrTest(unittest.TestCase):
 
     def test_truth_value_to_str(self):
         self.assertEqual(str(TYPE_TRUTH_VALUE), 't')
+
+    def test_world_to_str(self):
+        self.assertEqual(str(TYPE_WORLD), 's')
 
     def test_recursive_type_to_str(self):
         self.assertEqual(str(TypeNode(TYPE_ENTITY, TYPE_TRUTH_VALUE)), '<e, t>')
