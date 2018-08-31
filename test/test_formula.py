@@ -1,9 +1,9 @@
 import unittest
 
 from montague.formula import (
-    ForAllNode, AndNode, CallNode, ExistsNode, IfThenNode, LambdaNode, NotNode,
-    OrNode, TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY,
-    TYPE_EVENT, TYPE_TRUTH_VALUE, TYPE_WORLD,
+    AndNode, CallNode, ExistsNode, ForAllNode, IfAndOnlyIfNode, IfThenNode,
+    LambdaNode, NotNode, OrNode, TypeNode, VarNode, parse_formula, parse_type,
+    TYPE_ENTITY, TYPE_EVENT, TYPE_TRUTH_VALUE, TYPE_WORLD,
 )
 
 from lark.exceptions import LarkError
@@ -67,6 +67,27 @@ class FormulaParseTest(unittest.TestCase):
             IfThenNode(
                 VarNode('a'),
                 IfThenNode(
+                    VarNode('b'),
+                    VarNode('c')
+                )
+            )
+        )
+
+    def test_parsing_iff(self):
+        self.assertTupleEqual(
+            parse_formula('a <-> b'),
+            IfAndOnlyIfNode(
+                VarNode('a'),
+                VarNode('b')
+            )
+        )
+
+    def test_parsing_multi_iff(self):
+        self.assertTupleEqual(
+            parse_formula('a <-> b <-> c'),
+            IfAndOnlyIfNode(
+                VarNode('a'),
+                IfAndOnlyIfNode(
                     VarNode('b'),
                     VarNode('c')
                 )
@@ -344,6 +365,12 @@ class FormulaToStrTest(unittest.TestCase):
 
     def test_if_to_str(self):
         self.assertEqual(str(IfThenNode(VarNode('a'), VarNode('b'))), 'a -> b')
+
+    def test_iff_to_str(self):
+        self.assertEqual(
+            str(IfAndOnlyIfNode(VarNode('a'), VarNode('b'))),
+            'a <-> b'
+        )
 
     def test_lambda_to_str(self):
         self.assertEqual(

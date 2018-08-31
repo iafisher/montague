@@ -1,7 +1,7 @@
 import unittest
 
 from montague.formula import (
-    ForAllNode, AndNode, CallNode, ExistsNode, NotNode, VarNode,
+    AndNode, CallNode, ExistsNode, ForAllNode, NotNode, VarNode,
 )
 from montague.interpreter import WorldModel, interpret_formula
 

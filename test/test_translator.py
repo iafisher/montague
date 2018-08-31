@@ -3,7 +3,7 @@ import os
 import unittest
 
 from montague.formula import (
-    ForAllNode, AndNode, CallNode, ExistsNode, IfThenNode, LambdaNode, OrNode,
+    AndNode, CallNode, ExistsNode, ForAllNode, IfThenNode, LambdaNode, OrNode,
     TypeNode, VarNode, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
     TYPE_TRUTH_VALUE,
 )

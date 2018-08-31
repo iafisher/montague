@@ -7,7 +7,7 @@ Version: August 2018
 from collections import namedtuple
 
 from .formula import (
-    ForAllNode, AndNode, CallNode, ExistsNode, IfThenNode, NotNode, OrNode,
+    AndNode, CallNode, ExistsNode, ForAllNode, IfThenNode, NotNode, OrNode,
     VarNode,
 )
 

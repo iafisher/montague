@@ -74,6 +74,15 @@ class IfThenNode(Node, namedtuple('IfThenNode', ['left', 'right'])):
         return f'{left} -> {right}'
 
 
+class IfAndOnlyIfNode(Node, namedtuple('IfAndOnlyIfNode', ['left', 'right'])):
+    prec = 4
+
+    def __str__(self):
+        left = wrapb(self, self.left, False)
+        right = wrapb(self, self.right, True)
+        return f'{left} <-> {right}'
+
+
 class NotNode(Node, namedtuple('NotNode', ['operand'])):
     prec = 1
 
@@ -166,7 +175,12 @@ class TreeToFormula(Transformer):
     """
 
     def expr(self, matches):
-        return IfThenNode(matches[0], matches[2])
+        if matches[1] == '->':
+            return IfThenNode(matches[0], matches[2])
+        elif matches[1] == '<->':
+            return IfAndOnlyIfNode(matches[0], matches[2])
+        else:
+            raise NotImplementedError
 
     def ifterm(self, matches):
         return OrNode(matches[0], matches[2])
@@ -203,7 +217,7 @@ class TreeToFormula(Transformer):
 formula_parser = Lark('''
     ?start: expr
 
-    ?expr: ifterm | ifterm IMPLIES expr
+    ?expr: ifterm | ifterm IMPLIES expr | ifterm IFF expr
 
     ?ifterm: term | term OR ifterm
     ?term: factor | factor AND term
@@ -228,6 +242,7 @@ formula_parser = Lark('''
     OR: "|"
     AND: "&"
     IMPLIES: "->"
+    IFF: "<->"
     NOT: "~"
 
     %import common.WS
