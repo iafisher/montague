@@ -9,7 +9,7 @@ from montague.formula import (
 )
 from montague.translator import (
     LexiconEntry, LexiconError, TranslationError, can_combine, combine,
-    load_lexicon, simplify_formula, translate_sentence,
+    load_lexicon, translate_sentence,
 )
 
 
@@ -147,86 +147,80 @@ class CombinerTest(unittest.TestCase):
 
 class SimplifierTest(unittest.TestCase):
     def test_simplify_call(self):
+        tree = CallNode(
+            LambdaNode('x', VarNode('x')),
+            VarNode('j')
+        )
         self.assertTupleEqual(
-            simplify_formula(
-                CallNode(
-                    LambdaNode('x', VarNode('x')),
-                    VarNode('j')
-                )
-            ),
+            tree.simplify(),
             VarNode('j')
         )
 
     def test_simplify_nested_call(self):
         # (Lx.Ly.x & y)(a)(b) -> a & b
-        self.assertTupleEqual(
-            simplify_formula(
-                CallNode(
-                    CallNode(
-                        LambdaNode(
-                            'x',
-                            LambdaNode(
-                                'y',
-                                AndNode(VarNode('x'), VarNode('y'))
-                            )
-                        ),
-                        VarNode('a')
-                    ),
-                    VarNode('b')
-                )
+        tree = CallNode(
+            CallNode(
+                LambdaNode(
+                    'x',
+                    LambdaNode(
+                        'y',
+                        AndNode(VarNode('x'), VarNode('y'))
+                    )
+                ),
+                VarNode('a')
             ),
+            VarNode('b')
+        )
+        self.assertTupleEqual(
+            tree.simplify(),
             AndNode(VarNode('a'), VarNode('b'))
         )
 
     def test_simplify_call_with_lambda_arg(self):
         # (LP.P(x))(Lx.x | a) -> x | a
-        self.assertTupleEqual(
-            simplify_formula(
-                CallNode(
-                    LambdaNode(
-                        'P',
-                        CallNode(VarNode('P'), VarNode('x'))
-                    ),
-                    LambdaNode(
-                        'x',
-                        OrNode(VarNode('x'), VarNode('a'))
-                    )
-                )
+        tree = CallNode(
+            LambdaNode(
+                'P',
+                CallNode(VarNode('P'), VarNode('x'))
             ),
+            LambdaNode(
+                'x',
+                OrNode(VarNode('x'), VarNode('a'))
+            )
+        )
+        self.assertTupleEqual(
+            tree.simplify(),
             OrNode(VarNode('x'), VarNode('a'))
         )
 
     def test_simplify_super_nested_call(self):
         # (LP.P(a, b))(Lx.Ly.x & y) -> a & b
-        self.assertTupleEqual(
-            simplify_formula(
-                CallNode(
-                    LambdaNode(
-                        'P',
-                        CallNode(CallNode(VarNode('P'), VarNode('a')), VarNode('b'))
-                    ),
-                    LambdaNode(
-                        'x',
-                        LambdaNode(
-                            'y',
-                            AndNode(VarNode('x'), VarNode('y'))
-                        )
-                    )
-                )
+        tree = CallNode(
+            LambdaNode(
+                'P',
+                CallNode(CallNode(VarNode('P'), VarNode('a')), VarNode('b'))
             ),
+            LambdaNode(
+                'x',
+                LambdaNode(
+                    'y',
+                    AndNode(VarNode('x'), VarNode('y'))
+                )
+            )
+        )
+        self.assertTupleEqual(
+            tree.simplify(),
             AndNode(VarNode('a'), VarNode('b'))
         )
 
     def test_simplify_every_child(self):
         # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
-        tree = simplify_formula(
-            CallNode(
-                TEST_LEXICON['every'].denotation,
-                TEST_LEXICON['child'].denotation
-            )
+        tree = CallNode(
+            TEST_LEXICON['every'].denotation,
+            TEST_LEXICON['child'].denotation
         )
         self.assertTupleEqual(
-            tree,
+            tree.simplify(),
             LambdaNode(
                 'Q',
                 AllNode(

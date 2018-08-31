@@ -44,7 +44,7 @@ def translate_sentence(sentence, lexicon):
         if len(terms) == previous:
             raise TranslationError('Could not translate the sentence')
         previous = len(terms)
-    return LexiconEntry(simplify_formula(terms[0].denotation), terms[0].type)
+    return LexiconEntry(terms[0].denotation.simplify(), terms[0].type)
 
 
 def combine(term1, term2):
@@ -68,23 +68,6 @@ def combine(term1, term2):
 def can_combine(term1, term2):
     """Return True if the terms can be combined."""
     return isinstance(term1.type, TypeNode) and term1.type.left == term2.type
-
-
-def simplify_formula(tree):
-    """Simplify the tree by lambda conversion."""
-    if isinstance(tree, CallNode) and not isinstance(tree.caller, VarNode):
-        caller = simplify_formula(tree.caller)
-        arg = simplify_formula(tree.arg)
-        if isinstance(caller, LambdaNode):
-            return simplify_formula(
-                caller.body.replace_variable(caller.parameter, arg)
-            )
-        else:
-            return CallNode(tree.caller, arg)
-    elif isinstance(tree, tuple):
-        return tree.__class__(*map(simplify_formula, tree))
-    else:
-        return tree
 
 
 class CombinationError(Exception):

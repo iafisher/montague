@@ -19,14 +19,24 @@ class Node:
         `replacement`.
 
         The default implementation recursively replaces the variable in all
-        subchildren. Subclasses may need to override this implementation.
+        children. Subclasses may need to override this implementation.
         """
         return self.__class__(
-            *[c.replace_variable(variable, replacement) for c in self]
+            *[(c.replace_variable(variable, replacement) if isinstance(c, Node)
+               else c) for c in self]
         )
 
+    def simplify(self):
+        """Simplify the tree by lambda conversion.
 
-class VarNode(Node, namedtuple('VarNode', 'value')):
+        The default implementation recursively simplifies each child. Subclasses
+        may need to override this implementation.
+        """
+        return self.__class__(*[(c.simplify() if isinstance(c, Node) else c)
+            for c in self])
+
+
+class VarNode(Node, namedtuple('VarNode', ['value'])):
     prec = 1
 
     def __str__(self):
@@ -104,8 +114,18 @@ class CallNode(Node, namedtuple('CallNode', ['caller', 'arg'])):
         if isinstance(func, VarNode):
             return f'{func}({args})'
         else:
-            # Syntactically, a non-
+            # Syntactically, a non-constant function must be in parentheses in
+            # a call expression.
             return f'({func})({args})'
+
+    def simplify(self):
+        caller = self.caller.simplify()
+        arg = self.arg.simplify()
+        if isinstance(caller, LambdaNode):
+            return caller.body.replace_variable(caller.parameter, arg) \
+                .simplify()
+        else:
+            return CallNode(self.caller, arg)
 
 
 class AllNode(Node, namedtuple('AllNode', ['symbol', 'body'])):
