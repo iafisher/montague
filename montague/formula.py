@@ -275,7 +275,6 @@ class TypeNode(namedtuple('TypeNode', ['left', 'right'])):
            >>> typ.concise_str()
            'et'
         """
-        left = self.left
         if isinstance(self.left, AtomicType) \
            and isinstance(self.right, AtomicType):
             return f'{self.left}{self.right}'
@@ -302,11 +301,13 @@ class TreeToType(Transformer):
     def type(self, matches):
         if len(matches) == 2:
             return TypeNode(matches[0], matches[1])
-        else:
+        elif len(matches) == 1:
             if len(matches[0]) == 2:
                 return TypeNode(matches[0][0], matches[0][1])
             else:
                 return matches[0]
+        else:
+            raise NotImplementedError
 
 
 # The grammar of the type mini-language.
