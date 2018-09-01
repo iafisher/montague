@@ -1,7 +1,12 @@
-"""The representation of logical formulas and semantic types as trees.
+"""The representation of logical formulas, semantic types and sentences as
+trees.
+
+Logical formulas: Formula subclasses
+Semantic types: ComplexType and AtomicType
+Sentences: SentenceNode
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: August 2018
+Version: September 2018
 """
 from collections import namedtuple
 
@@ -239,6 +244,17 @@ TYPE_ENTITY = AtomicType('e')
 TYPE_TRUTH_VALUE = AtomicType('t')
 TYPE_EVENT = AtomicType('v')
 TYPE_WORLD = AtomicType('s')
+
+
+# The class to represent English sentences as trees. `left` and `right` may be
+# None. `text` is the English text corresponding to the node and all the nodes
+# it dominates.
+SentenceNode = namedtuple(
+    'SentenceNode', ['text', 'formula', 'type', 'left', 'right']
+)
+# `left` and `right` default to None.
+# Courtesy of https://stackoverflow.com/questions/11351032/
+SentenceNode.__new__.__defaults__ = (None, None)
 
 
 def wrapb(parent, child, right):

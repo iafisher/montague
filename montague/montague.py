@@ -1,7 +1,7 @@
 """A natural-language understanding system.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: August 2018
+Version: September 2018
 """
 import json
 import os
@@ -73,7 +73,7 @@ def execute_command(command, shell_state):
         except Exception as e:
             return f'Error: {e}'
         else:
-            return f'Denotation: {entry.denotation}\nType: {entry.type}'
+            return f'Denotation: {entry.formula}\nType: {entry.type}'
 
 
 HELP_MESSAGE = '''\

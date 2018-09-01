@@ -1,7 +1,7 @@
 """Translation from English to the logical representation language.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: August 2018
+Version: September 2018
 """
 from collections import namedtuple
 
@@ -11,9 +11,6 @@ from .ast import *
 from .parser import parse_formula, parse_type
 
 
-LexiconEntry = namedtuple('LexiconEntry', ['word', 'denotation', 'type'])
-
-
 def translate_sentence(sentence, lexicon):
     """Translate `sentence`, a string containing English text, into a logical
     formula which represents its truth conditions.
@@ -21,7 +18,7 @@ def translate_sentence(sentence, lexicon):
     If the sentence cannot be translated, a TranslationError is raised.
     """
     try:
-        terms = [lexicon[t] for t in sentence.split()]
+        terms = [lexicon[word] for word in sentence.split()]
     except KeyError as e:
         raise TranslationError(f'Could not translate the word {e}')
 
@@ -43,13 +40,12 @@ def translate_sentence(sentence, lexicon):
             raise TranslationError(
                 'Could not translate the sentence: '
                 + 'no way to merge '
-                + ', '.join(f'[{term.word} ({term.type.concise_str()})]'
+                + ', '.join(f'[{term.text} ({term.type.concise_str()})]'
                     for term in terms)
             )
         previous = len(terms)
-    return LexiconEntry(
-        terms[0].word, terms[0].denotation.simplify(), terms[0].type
-    )
+    root = terms[0]._replace(formula=terms[0].formula.simplify())
+    return root
 
 
 def combine(term1, term2):
@@ -59,17 +55,24 @@ def combine(term1, term2):
     CombinationError is raised.
     """
     if can_combine(term1, term2):
-        words = term1.word + ' ' + term2.word
+        return SentenceNode(
+            term1.text + ' ' + term2.text,
+            Call(term1.formula, term2.formula),
+            term1.type.right,
+            term1,
+            term2
+        )
     elif can_combine(term2, term1):
-        term1, term2 = term2, term1
-        words = term2.word + ' ' + term1.word
+        return SentenceNode(
+            # `text` should maintain linear order.
+            term1.text + ' ' + term2.text,
+            Call(term2.formula, term1.formula),
+            term2.type.right,
+            term2,
+            term1
+        )
     else:
         raise CombinationError
-    return LexiconEntry(
-        words,
-        Call(term1.denotation, term2.denotation),
-        term1.type.right
-    )
 
 
 def can_combine(term1, term2):
@@ -115,4 +118,4 @@ def load_lexical_entry(key, value):
     except LarkError as e:
         raise LexiconError(f'could not parse type of {key} ({e})')
 
-    return LexiconEntry(key, denotation, type_)
+    return SentenceNode(key, denotation, type_)

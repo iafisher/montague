@@ -3,14 +3,14 @@ from unittest.mock import patch
 
 from montague.ast import *
 from montague.montague import ShellState, execute_command, HELP_MESSAGE
-from montague.translator import LexiconEntry, TranslationError
+from montague.translator import TranslationError
 
 
 TEST_LEXICON = {
-  'good': LexiconEntry(
+  'good': SentenceNode(
       'good',
       Lambda('x', Call(Var('Good'), Var('x'))),
-      ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+      ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
   ),
 }
 
@@ -41,10 +41,12 @@ class MontagueShellTest(unittest.TestCase):
 
     @patch('montague.montague.translate_sentence')
     def test_display_formula(self, mock_translate_sentence):
-        mock_translate_sentence.return_value = LexiconEntry(
+        mock_translate_sentence.return_value = SentenceNode(
             'good',
             Call(Var('Good'), Var('j')),
-            TYPE_TRUTH_VALUE
+            TYPE_TRUTH_VALUE,
+            None,
+            None
         )
         response = execute_command('John is good', self.shell_state)
         self.assertIn('Denotation: Good(j)', response)

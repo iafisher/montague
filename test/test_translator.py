@@ -5,8 +5,8 @@ import unittest
 from montague.ast import *
 from montague.parser import parse_formula, parse_type
 from montague.translator import (
-    LexiconEntry, LexiconError, TranslationError, can_combine, combine,
-    load_lexicon, translate_sentence,
+    LexiconError, TranslationError, can_combine, combine, load_lexicon,
+    translate_sentence,
 )
 
 
@@ -14,22 +14,22 @@ TYPE_ET = ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 
 TEST_LEXICON = {
-  'bad': LexiconEntry(
+  'bad': SentenceNode(
       'bad',
       Lambda('x', Call(Var('Bad'), Var('x'))),
-      TYPE_ET
+      TYPE_ET,
   ),
-  'is': LexiconEntry(
+  'is': SentenceNode(
       'is',
       Lambda('P', Var('P')),
       ComplexType(TYPE_ET, TYPE_ET)
   ),
-  'good': LexiconEntry(
+  'good': SentenceNode(
       'good',
       Lambda('x', Call(Var('Good'), Var('x'))),
       TYPE_ET
   ),
-  'every': LexiconEntry(
+  'every': SentenceNode(
       'every',
       Lambda(
           'P',
@@ -49,13 +49,13 @@ TEST_LEXICON = {
           ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)
       )
   ),
-  'child': LexiconEntry(
+  'child': SentenceNode(
       'child',
       Lambda('x', Call(Var('Child'), Var('x'))),
       TYPE_ET
   ),
-  'John': LexiconEntry('John', Var('j'), TYPE_ENTITY),
-  'the': LexiconEntry(
+  'John': SentenceNode('John', Var('j'), TYPE_ENTITY),
+  'the': SentenceNode(
       'the',
       Lambda('P', Iota('x', Call(Var('P'), Var('x')))),
       ComplexType(TYPE_ET, TYPE_ENTITY)
@@ -65,63 +65,51 @@ TEST_LEXICON = {
 
 class TranslatorTest(unittest.TestCase):
     def test_is_good(self):
+        node = translate_sentence('is good', TEST_LEXICON)
+        self.assertEqual(node.text, 'is good')
         self.assertTupleEqual(
-            translate_sentence('is good', TEST_LEXICON),
-            LexiconEntry(
-                'is good',
-                Lambda(
-                    'x',
-                    Call(Var('Good'), Var('x'))
-                ),
-                TYPE_ET
+            node.formula,
+            Lambda(
+                'x',
+                Call(Var('Good'), Var('x'))
             )
         )
+        self.assertTupleEqual(node.type, TYPE_ET)
 
     def test_john_is_good(self):
-        self.assertTupleEqual(
-            translate_sentence('John is good', TEST_LEXICON),
-            LexiconEntry(
-                'John is good',
-                Call(Var('Good'), Var('j')),
-                TYPE_TRUTH_VALUE
-            )
-        )
+        node = translate_sentence('John is good', TEST_LEXICON)
+        self.assertEqual(node.text, 'John is good')
+        self.assertTupleEqual(node.formula, Call(Var('Good'), Var('j')))
+        self.assertEqual(node.type, TYPE_TRUTH_VALUE)
 
     def test_john_is_bad(self):
-        self.assertTupleEqual(
-            translate_sentence('John is bad', TEST_LEXICON),
-            LexiconEntry(
-                'John is bad',
-                Call(Var('Bad'), Var('j')),
-                TYPE_TRUTH_VALUE
-            )
-        )
+        node = translate_sentence('John is bad', TEST_LEXICON)
+        self.assertEqual(node.text, 'John is bad')
+        self.assertTupleEqual(node.formula, Call(Var('Bad'), Var('j')))
+        self.assertEqual(node.type, TYPE_TRUTH_VALUE)
 
     def test_every_child_is_good(self):
+        node = translate_sentence('every child is good', TEST_LEXICON)
+        self.assertEqual(node.text, 'every child is good')
         self.assertTupleEqual(
-            translate_sentence('every child is good', TEST_LEXICON),
-            LexiconEntry(
-                'every child is good',
-                ForAll(
-                    'x',
-                    IfThen(
-                        Call(Var('Child'), Var('x')),
-                        Call(Var('Good'), Var('x'))
-                    )
-                ),
-                TYPE_TRUTH_VALUE
+            node.formula,
+            ForAll(
+                'x',
+                IfThen(
+                    Call(Var('Child'), Var('x')),
+                    Call(Var('Good'), Var('x'))
+                )
             )
         )
+        self.assertEqual(node.type, TYPE_TRUTH_VALUE)
 
     def test_the_child(self):
+        node = translate_sentence('the child', TEST_LEXICON)
+        self.assertEqual(node.text, 'the child')
         self.assertTupleEqual(
-            translate_sentence('the child', TEST_LEXICON),
-            LexiconEntry(
-                'the child',
-                Iota('x', Call(Var('Child'), Var('x'))),
-                TYPE_ENTITY
-            )
+            node.formula, Iota('x', Call(Var('Child'), Var('x')))
         )
+        self.assertEqual(node.type, TYPE_ENTITY)
 
     def test_translate_invalid_sentence(self):
         with self.assertRaises(TranslationError):
@@ -133,31 +121,29 @@ class TranslatorTest(unittest.TestCase):
 
 
 class CombinerTest(unittest.TestCase):
-    pred = LexiconEntry('', parse_formula('Lx.P(x)'), parse_type('<e, t>'))
-    entity = LexiconEntry('', Var('me'), TYPE_ENTITY)
+    pred = SentenceNode(
+        'does', parse_formula('Lx.P(x)'), parse_type('<e, t>'), None, None
+    )
+    entity = SentenceNode('me', Var('me'), TYPE_ENTITY, None, None)
 
     def test_saturate_predicate(self):
         self.assertTrue(can_combine(self.pred, self.entity))
+        node = combine(self.pred, self.entity)
+        self.assertEqual(node.text, 'does me')
         self.assertTupleEqual(
-            combine(self.pred, self.entity),
-            LexiconEntry(
-                ' ',
-                Call(self.pred.denotation, self.entity.denotation),
-                TYPE_TRUTH_VALUE
-            )
+            node.formula, Call(self.pred.formula, self.entity.formula)
         )
+        self.assertEqual(node.type, TYPE_TRUTH_VALUE)
 
     def test_combine_every_child(self):
         every = TEST_LEXICON['every']
         child = TEST_LEXICON['child']
+        node = combine(every, child)
+        self.assertEqual(node.text, 'every child')
         self.assertTupleEqual(
-            combine(every, child),
-            LexiconEntry(
-                'every child',
-                Call(every.denotation, child.denotation),
-                ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)
-            )
+            node.formula, Call(every.formula, child.formula)
         )
+        self.assertTupleEqual(node.type, ComplexType(TYPE_ET, TYPE_TRUTH_VALUE))
 
     def test_can_combine_is_good(self):
         self.assertTrue(can_combine(TEST_LEXICON['is'], TEST_LEXICON['good']))
@@ -239,8 +225,8 @@ class SimplifierTest(unittest.TestCase):
     def test_simplify_every_child(self):
         # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
         tree = Call(
-            TEST_LEXICON['every'].denotation,
-            TEST_LEXICON['child'].denotation
+            TEST_LEXICON['every'].formula,
+            TEST_LEXICON['child'].formula
         )
         self.assertTupleEqual(
             tree.simplify(),
@@ -272,13 +258,11 @@ class LexiconLoaderTest(unittest.TestCase):
         self.assertDictEqual(
             lexicon,
             {
-                'John': LexiconEntry(
+                'John': SentenceNode(
                     'John', parse_formula('j'), parse_type('e')
                 ),
-                'good': LexiconEntry(
-                    'good',
-                    parse_formula('Lx.Good(x)'),
-                    parse_type('et')
+                'good': SentenceNode(
+                    'good', parse_formula('Lx.Good(x)'), parse_type('et')
                 ),
             }
         )
