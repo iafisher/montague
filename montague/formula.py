@@ -49,6 +49,9 @@ class TreeToFormula(Transformer):
             func = Call(func, matches[i])
         return func
 
+    def iota(self, matches):
+        return Iota(matches[0], matches[1])
+
     def not_e(self, matches):
         return Not(matches[1])
 
@@ -67,6 +70,7 @@ formula_parser = Lark('''
            | lambda_
            | forall
            | exists
+           | iota
            | NOT factor  -> not_e
 
     call: variable "(" _arglist? ")" | "(" expr ")" "(" _arglist? ")"
@@ -75,10 +79,11 @@ formula_parser = Lark('''
     lambda_: "L" SYMBOL "." expr
     forall: "A" SYMBOL "." expr
     exists: "E" SYMBOL "." expr
+    iota: "i" SYMBOL "." expr
 
     variable: SYMBOL
 
-    SYMBOL: /[B-DF-KM-Za-z][A-Za-z0-9_'-]*/
+    SYMBOL: /[B-DF-KM-Za-hj-z][A-Za-z0-9_'-]*/
     OR: "|"
     AND: "&"
     IMPLIES: "->"

@@ -15,6 +15,7 @@ test_model = WorldModel(
         'm': Mary,
         'Good': set([John]),
         'Bad': set([Mary]),
+        'Man': set([John]),
         'Human': set([Mary, John]),
         'Alien': set([]),
     }
@@ -54,3 +55,15 @@ class InterpreterTest(unittest.TestCase):
     def test_someone_is_alien_is_false(self):
         formula = Exists('x', Call(Var('Alien'), Var('x')))
         self.assertFalse(interpret_formula(formula, test_model))
+
+    def test_the_man_is_john(self):
+        formula = Iota('x', Call(Var('Man'), Var('x')))
+        self.assertEqual(interpret_formula(formula, test_model), John)
+
+    def test_the_man_is_good_is_true(self):
+        formula = Call(Var('Good'), Iota('x', Call(Var('Man'), Var('x'))))
+        self.assertTrue(interpret_formula(formula, test_model))
+
+    def test_the_human_is_undefined(self):
+        formula = Iota('x', Call(Var('Human'), Var('x')))
+        self.assertEqual(interpret_formula(formula, test_model), None)

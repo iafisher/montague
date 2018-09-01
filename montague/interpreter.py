@@ -6,7 +6,7 @@ Version: August 2018
 """
 from collections import namedtuple
 
-from .formula import And, Call, Exists, ForAll, IfThen, Not, Or, Var
+from .ast import *
 
 
 WorldModel = namedtuple('WorldModel', ['individuals', 'assignments'])
@@ -55,6 +55,20 @@ def interpret_formula(formula, model):
         return False
     elif isinstance(formula, Not):
         return not interpret_formula(formula.operand, model)
+    elif isinstance(formula, Iota):
+        old_value = model.assignments.get(formula.symbol)
+        reference = None
+        # Find the unique individual that satisfies the body.
+        for individual in model.individuals:
+            model.assignments[formula.symbol] = individual
+            if interpret_formula(formula.body, model):
+                if reference is None:
+                    reference = individual
+                else:
+                    # More than one individual satisfies the body, so the
+                    # denotation of the expression is undefined.
+                    return None
+        return reference
     else:
         # TODO: Handle LambdaNodes differently (they can't be interpreted, but
         # they should give a better error message).

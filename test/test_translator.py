@@ -14,19 +14,19 @@ TYPE_ET = ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 
 TEST_LEXICON = {
-  "bad": LexiconEntry(
+  'bad': LexiconEntry(
       Lambda('x', Call(Var('Bad'), Var('x'))),
       TYPE_ET
   ),
-  "is": LexiconEntry(
+  'is': LexiconEntry(
       Lambda('P', Var('P')),
       ComplexType(TYPE_ET, TYPE_ET)
   ),
-  "good": LexiconEntry(
+  'good': LexiconEntry(
       Lambda('x', Call(Var('Good'), Var('x'))),
       TYPE_ET
   ),
-  "every": LexiconEntry(
+  'every': LexiconEntry(
       Lambda(
           'P',
           Lambda(
@@ -45,11 +45,15 @@ TEST_LEXICON = {
           ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)
       )
   ),
-  "child": LexiconEntry(
+  'child': LexiconEntry(
       Lambda('x', Call(Var('Child'), Var('x'))),
       TYPE_ET
   ),
-  "John": LexiconEntry(Var('j'), TYPE_ENTITY),
+  'John': LexiconEntry(Var('j'), TYPE_ENTITY),
+  'the': LexiconEntry(
+      Lambda('P', Iota('x', Call(Var('P'), Var('x')))),
+      ComplexType(TYPE_ET, TYPE_ENTITY)
+   )
 }
 
 
@@ -96,6 +100,15 @@ class TranslatorTest(unittest.TestCase):
                     )
                 ),
                 TYPE_TRUTH_VALUE
+            )
+        )
+
+    def test_the_child(self):
+        self.assertTupleEqual(
+            translate_sentence('the child', TEST_LEXICON),
+            LexiconEntry(
+                Iota('x', Call(Var('Child'), Var('x'))),
+                TYPE_ENTITY
             )
         )
 

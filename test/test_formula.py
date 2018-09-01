@@ -235,6 +235,12 @@ class FormulaParseTest(unittest.TestCase):
             Exists('x', Or(Var('x'), Var('y')))
         )
 
+    def test_parsing_iota(self):
+        self.assertTupleEqual(
+            parse_formula('ix.Man(x)'),
+            Iota('x', Call(Var('Man'), Var('x')))
+        )
+
 
 class FormulaParseErrorTest(unittest.TestCase):
     def test_missing_operand(self):
@@ -445,6 +451,9 @@ class FormulaToStrTest(unittest.TestCase):
             '[Lx.x] & [Ly.y]'
         )
 
+    def test_iota_to_str(self):
+        self.assertEqual(str(Iota('x', Var('x'))), 'ix.x')
+
 
 class TypeToStrTest(unittest.TestCase):
     def test_entity_to_str(self):
@@ -561,4 +570,12 @@ class ReplacerTest(unittest.TestCase):
                 ),
                 And(Var('j'), Var('y'))
             )
+        )
+
+    def test_replace_variable_in_iota(self):
+        tree = Iota('x', And(Var('x'), Var('y')))
+        self.assertTupleEqual(tree.replace_variable('x', Var('a')), tree)
+        self.assertTupleEqual(
+            tree.replace_variable('y', Var('b')),
+            Iota('x', And(Var('x'), Var('b')))
         )

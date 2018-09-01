@@ -168,6 +168,22 @@ class Exists(Formula, namedtuple('Exists', ['symbol', 'body'])):
             return self
 
 
+class Iota(Formula, namedtuple('Iota', ['symbol', 'body'])):
+    prec = 5
+
+    def __str__(self):
+        return f'i{self.symbol}.{self.body}'
+
+    def replace_variable(self, variable, replacement):
+        if variable != self.symbol:
+            return Iota(
+                self.symbol,
+                self.body.replace_variable(variable, replacement)
+            )
+        else:
+            return self
+
+
 # Below are defined the classes to represent semantic types as trees.
 
 
