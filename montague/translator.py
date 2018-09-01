@@ -11,7 +11,7 @@ from .ast import *
 from .parser import parse_formula, parse_type
 
 
-LexiconEntry = namedtuple('LexiconEntry', ['denotation', 'type'])
+LexiconEntry = namedtuple('LexiconEntry', ['word', 'denotation', 'type'])
 
 
 def translate_sentence(sentence, lexicon):
@@ -40,9 +40,16 @@ def translate_sentence(sentence, lexicon):
             new_terms.append(terms[i])
         terms = new_terms
         if len(terms) == previous:
-            raise TranslationError('Could not translate the sentence')
+            raise TranslationError(
+                'Could not translate the sentence: '
+                + 'no way to merge '
+                + ', '.join(f'[{term.word} ({term.type.concise_str()})]'
+                    for term in terms)
+            )
         previous = len(terms)
-    return LexiconEntry(terms[0].denotation.simplify(), terms[0].type)
+    return LexiconEntry(
+        terms[0].word, terms[0].denotation.simplify(), terms[0].type
+    )
 
 
 def combine(term1, term2):
@@ -52,12 +59,14 @@ def combine(term1, term2):
     CombinationError is raised.
     """
     if can_combine(term1, term2):
-        pass
+        words = term1.word + ' ' + term2.word
     elif can_combine(term2, term1):
         term1, term2 = term2, term1
+        words = term2.word + ' ' + term1.word
     else:
         raise CombinationError
     return LexiconEntry(
+        words,
         Call(term1.denotation, term2.denotation),
         term1.type.right
     )
@@ -106,4 +115,4 @@ def load_lexical_entry(key, value):
     except LarkError as e:
         raise LexiconError(f'could not parse type of {key} ({e})')
 
-    return LexiconEntry(denotation, type_)
+    return LexiconEntry(key, denotation, type_)

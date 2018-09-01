@@ -117,9 +117,11 @@ class TreeToType(Transformer):
             return ComplexType(matches[0], matches[1])
         elif len(matches) == 1:
             if len(matches[0]) == 2:
-                return ComplexType(matches[0][0], matches[0][1])
+                return ComplexType(
+                    AtomicType(matches[0][0]), AtomicType(matches[0][1])
+                )
             else:
-                return matches[0]
+                return AtomicType(matches[0])
         else:
             raise NotImplementedError
 

@@ -15,18 +15,22 @@ TYPE_ET = ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 TEST_LEXICON = {
   'bad': LexiconEntry(
+      'bad',
       Lambda('x', Call(Var('Bad'), Var('x'))),
       TYPE_ET
   ),
   'is': LexiconEntry(
+      'is',
       Lambda('P', Var('P')),
       ComplexType(TYPE_ET, TYPE_ET)
   ),
   'good': LexiconEntry(
+      'good',
       Lambda('x', Call(Var('Good'), Var('x'))),
       TYPE_ET
   ),
   'every': LexiconEntry(
+      'every',
       Lambda(
           'P',
           Lambda(
@@ -46,11 +50,13 @@ TEST_LEXICON = {
       )
   ),
   'child': LexiconEntry(
+      'child',
       Lambda('x', Call(Var('Child'), Var('x'))),
       TYPE_ET
   ),
-  'John': LexiconEntry(Var('j'), TYPE_ENTITY),
+  'John': LexiconEntry('John', Var('j'), TYPE_ENTITY),
   'the': LexiconEntry(
+      'the',
       Lambda('P', Iota('x', Call(Var('P'), Var('x')))),
       ComplexType(TYPE_ET, TYPE_ENTITY)
    )
@@ -62,6 +68,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('is good', TEST_LEXICON),
             LexiconEntry(
+                'is good',
                 Lambda(
                     'x',
                     Call(Var('Good'), Var('x'))
@@ -74,6 +81,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('John is good', TEST_LEXICON),
             LexiconEntry(
+                'John is good',
                 Call(Var('Good'), Var('j')),
                 TYPE_TRUTH_VALUE
             )
@@ -83,6 +91,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('John is bad', TEST_LEXICON),
             LexiconEntry(
+                'John is bad',
                 Call(Var('Bad'), Var('j')),
                 TYPE_TRUTH_VALUE
             )
@@ -92,6 +101,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('every child is good', TEST_LEXICON),
             LexiconEntry(
+                'every child is good',
                 ForAll(
                     'x',
                     IfThen(
@@ -107,6 +117,7 @@ class TranslatorTest(unittest.TestCase):
         self.assertTupleEqual(
             translate_sentence('the child', TEST_LEXICON),
             LexiconEntry(
+                'the child',
                 Iota('x', Call(Var('Child'), Var('x'))),
                 TYPE_ENTITY
             )
@@ -122,14 +133,15 @@ class TranslatorTest(unittest.TestCase):
 
 
 class CombinerTest(unittest.TestCase):
-    pred = LexiconEntry(parse_formula('Lx.P(x)'), parse_type('<e, t>'))
-    entity = LexiconEntry(Var('me'), TYPE_ENTITY)
+    pred = LexiconEntry('', parse_formula('Lx.P(x)'), parse_type('<e, t>'))
+    entity = LexiconEntry('', Var('me'), TYPE_ENTITY)
 
     def test_saturate_predicate(self):
         self.assertTrue(can_combine(self.pred, self.entity))
         self.assertTupleEqual(
             combine(self.pred, self.entity),
             LexiconEntry(
+                ' ',
                 Call(self.pred.denotation, self.entity.denotation),
                 TYPE_TRUTH_VALUE
             )
@@ -141,6 +153,7 @@ class CombinerTest(unittest.TestCase):
         self.assertTupleEqual(
             combine(every, child),
             LexiconEntry(
+                'every child',
                 Call(every.denotation, child.denotation),
                 ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)
             )
@@ -259,8 +272,11 @@ class LexiconLoaderTest(unittest.TestCase):
         self.assertDictEqual(
             lexicon,
             {
-                'John': LexiconEntry(parse_formula('j'), parse_type('e')),
+                'John': LexiconEntry(
+                    'John', parse_formula('j'), parse_type('e')
+                ),
                 'good': LexiconEntry(
+                    'good',
                     parse_formula('Lx.Good(x)'),
                     parse_type('et')
                 ),

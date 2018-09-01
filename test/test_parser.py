@@ -310,6 +310,13 @@ class TypeParseTest(unittest.TestCase):
             ComplexType(TYPE_EVENT, TYPE_TRUTH_VALUE)
         )
 
+    def test_types_are_AtomicType_class(self):
+        typ = parse_type('<et, et>')
+        self.assertIsInstance(typ.left.left, AtomicType)
+        self.assertIsInstance(typ.left.right, AtomicType)
+        self.assertIsInstance(typ.right.left, AtomicType)
+        self.assertIsInstance(typ.right.right, AtomicType)
+
     def test_parsing_big_compound_type(self):
         self.assertTupleEqual(
             parse_type('<<e, t>, <e, <s, t>>>'),

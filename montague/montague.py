@@ -69,6 +69,7 @@ def execute_command(command, shell_state):
     else:
         try:
             entry = translate_sentence(command, shell_state.lexicon)
+        # TODO: Only catch montague errors
         except Exception as e:
             return f'Error: {e}'
         else:
