@@ -73,7 +73,7 @@ formula_parser = Lark('''
            | iota
            | NOT factor  -> not_e
 
-    call: variable "(" _arglist? ")" | "(" expr ")" "(" _arglist? ")"
+    call: variable "(" _arglist ")" | "(" expr ")" "(" _arglist ")"
     _arglist: ( expr "," )* expr
 
     lambda_: "L" SYMBOL "." expr

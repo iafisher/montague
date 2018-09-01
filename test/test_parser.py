@@ -7,10 +7,8 @@ from lark.exceptions import LarkError
 
 
 class FormulaParseTest(unittest.TestCase):
-    def test_parsing_symbol(self):
+    def test_parsing_variable(self):
         self.assertTupleEqual(parse_formula('a'), Var('a'))
-
-    def test_parsing_long_symbol(self):
         self.assertTupleEqual(
             parse_formula("s8DVY_BUvybJH-VDNS'JhjS"),
             Var('s8DVY_BUvybJH-VDNS\'JhjS')
@@ -21,8 +19,6 @@ class FormulaParseTest(unittest.TestCase):
             parse_formula("a & a'"),
             And(Var('a'), Var('a\''))
         )
-
-    def test_parsing_multiple_conjunction(self):
         self.assertTupleEqual(
             parse_formula('a & b & c'),
             And(
@@ -39,8 +35,6 @@ class FormulaParseTest(unittest.TestCase):
             parse_formula('b | b0'),
             Or(Var('b'), Var('b0'))
         )
-
-    def test_parsing_multi_disjunction(self):
         self.assertTupleEqual(
             parse_formula('a | b | c'),
             Or(
@@ -52,13 +46,11 @@ class FormulaParseTest(unittest.TestCase):
             )
         )
 
-    def test_parsing_implication(self):
+    def test_parsing_if_then(self):
         self.assertTupleEqual(
             parse_formula('a -> b'),
             IfThen(Var('a'), Var('b'))
         )
-
-    def test_parsing_multi_implication(self):
         self.assertTupleEqual(
             parse_formula('a -> b -> c'),
             IfThen(
@@ -70,7 +62,7 @@ class FormulaParseTest(unittest.TestCase):
             )
         )
 
-    def test_parsing_iff(self):
+    def test_parsing_if_and_only_if(self):
         self.assertTupleEqual(
             parse_formula('a <-> b'),
             IfAndOnlyIf(
@@ -78,8 +70,6 @@ class FormulaParseTest(unittest.TestCase):
                 Var('b')
             )
         )
-
-    def test_parsing_multi_iff(self):
         self.assertTupleEqual(
             parse_formula('a <-> b <-> c'),
             IfAndOnlyIf(
@@ -93,20 +83,16 @@ class FormulaParseTest(unittest.TestCase):
 
     def test_parsing_negation(self):
         self.assertEqual(parse_formula('~a'), Not(Var('a')))
-
-    def test_parsing_negation_precedence(self):
         self.assertEqual(
             parse_formula('~a | b'),
             Or(Not(Var('a')), Var('b'))
         )
-
-    def test_parsing_negation_precedence2(self):
         self.assertEqual(
             parse_formula('~[a | b]'),
             Not(Or(Var('a'), Var('b')))
         )
 
-    def test_parsing_precedence(self):
+    def test_parsing_binary_precedence(self):
         self.assertTupleEqual(
             parse_formula('x & y | z -> m'),
             IfThen(
@@ -117,8 +103,6 @@ class FormulaParseTest(unittest.TestCase):
                 Var('m')
             )
         )
-
-    def test_parsing_precedence2(self):
         self.assertTupleEqual(
             parse_formula('x | y -> m & z'),
             IfThen(
@@ -132,8 +116,6 @@ class FormulaParseTest(unittest.TestCase):
                 )
             )
         )
-
-    def test_parsing_brackets(self):
         self.assertTupleEqual(
             parse_formula('[x | y] & z'),
             And(
@@ -153,8 +135,6 @@ class FormulaParseTest(unittest.TestCase):
                 )
             )
         )
-
-    def test_parsing_lambda2(self):
         self.assertEqual(
             parse_formula('L x.L y.[x & y]'),
             Lambda(
@@ -171,8 +151,6 @@ class FormulaParseTest(unittest.TestCase):
             parse_formula('Happy(x)'),
             Call(Var('Happy'), Var('x'))
         )
-
-    def test_parsing_call_with_several_args(self):
         self.assertTupleEqual(
             parse_formula('Between(x, y & z, [Capital(france)])'),
             Call(
@@ -186,8 +164,6 @@ class FormulaParseTest(unittest.TestCase):
                 Call(Var('Capital'), Var('france')),
             )
         )
-
-    def test_parsing_call_with_lambda(self):
         self.assertTupleEqual(
             parse_formula('(Lx.x)(j)'),
             Call(
@@ -195,8 +171,6 @@ class FormulaParseTest(unittest.TestCase):
                 Var('j')
             )
         )
-
-    def test_parsing_call_with_multiple_lambdas(self):
         self.assertTupleEqual(
             parse_formula('((Lx.Ly.x & y) (a)) (b)'),
             Call(
@@ -211,13 +185,11 @@ class FormulaParseTest(unittest.TestCase):
             )
         )
 
-    def test_parsing_forall(self):
+    def test_parsing_for_all(self):
         self.assertTupleEqual(
             parse_formula('Ax.x & y'),
             ForAll('x', And(Var('x'), Var('y')))
         )
-
-    def test_parsing_forall2(self):
         self.assertTupleEqual(
             parse_formula('A x.x & y'),
             ForAll('x', And(Var('x'), Var('y')))
@@ -228,8 +200,6 @@ class FormulaParseTest(unittest.TestCase):
             parse_formula('Ex.x | y'),
             Exists('x', Or(Var('x'), Var('y')))
         )
-
-    def test_parsing_exists2(self):
         self.assertTupleEqual(
             parse_formula('E x.x | y'),
             Exists('x', Or(Var('x'), Var('y')))
@@ -238,6 +208,10 @@ class FormulaParseTest(unittest.TestCase):
     def test_parsing_iota(self):
         self.assertTupleEqual(
             parse_formula('ix.Man(x)'),
+            Iota('x', Call(Var('Man'), Var('x')))
+        )
+        self.assertTupleEqual(
+            parse_formula('i x.Man(x)'),
             Iota('x', Call(Var('Man'), Var('x')))
         )
 
@@ -261,6 +235,22 @@ class FormulaParseErrorTest(unittest.TestCase):
         with self.assertRaises(LarkError):
             parse_formula('Lx.')
 
+    def test_for_all_missing_body(self):
+        with self.assertRaises(LarkError):
+            parse_formula('Ax.')
+
+    def test_exists_missing_body(self):
+        with self.assertRaises(LarkError):
+            parse_formula('Ex.')
+
+    def test_iota_missing_body(self):
+        with self.assertRaises(LarkError):
+            parse_formula('ix.')
+
+    def test_call_with_no_arg(self):
+        with self.assertRaises(LarkError):
+            parse_formula('Happy()')
+
     def test_unknown_token(self):
         with self.assertRaises(LarkError):
             parse_formula('Lx.x?')
@@ -268,6 +258,10 @@ class FormulaParseErrorTest(unittest.TestCase):
     def test_empty_string(self):
         with self.assertRaises(LarkError):
             parse_formula('')
+
+    def test_blank(self):
+        with self.assertRaises(LarkError):
+            parse_formula('     \t    \n \r \f')
 
 
 class TypeParseTest(unittest.TestCase):
@@ -355,6 +349,10 @@ class TypeParseErrorTest(unittest.TestCase):
         with self.assertRaises(LarkError):
             parse_type('')
 
+    def test_blank(self):
+        with self.assertRaises(LarkError):
+            parse_type('     \t    \n \r \f')
+
 
 class FormulaToStrTest(unittest.TestCase):
     def test_variable_to_str(self):
@@ -366,10 +364,10 @@ class FormulaToStrTest(unittest.TestCase):
     def test_or_to_str(self):
         self.assertEqual(str(Or(Var('a'), Var('b'))), 'a | b')
 
-    def test_if_to_str(self):
+    def test_if_then_to_str(self):
         self.assertEqual(str(IfThen(Var('a'), Var('b'))), 'a -> b')
 
-    def test_iff_to_str(self):
+    def test_if_and_only_if_to_str(self):
         self.assertEqual(
             str(IfAndOnlyIf(Var('a'), Var('b'))),
             'a <-> b'
@@ -379,6 +377,16 @@ class FormulaToStrTest(unittest.TestCase):
         self.assertEqual(
             str(Lambda('x', And(Var('a'), Var('x')))),
             'Lx.a & x'
+        )
+        # This formula is semantically invalid but that doesn't matter.
+        self.assertEqual(
+            str(
+                And(
+                    Lambda('x', Var('x')),
+                    Lambda('y', Var('y'))
+                )
+            ),
+            '[Lx.x] & [Ly.y]'
         )
 
     def test_call_to_str(self):
@@ -391,11 +399,9 @@ class FormulaToStrTest(unittest.TestCase):
             ),
             'P(a & b, Lx.x)'
         )
-
-    def test_call_with_one_arg_to_str(self):
         self.assertEqual(str(Call(Var('P'), Var('x'))), 'P(x)')
 
-    def test_forall_to_str(self):
+    def test_for_all_to_str(self):
         self.assertEqual(
             str(ForAll('x', Call(Var('P'), Var('x')))),
             'Ax.P(x)'
@@ -409,26 +415,22 @@ class FormulaToStrTest(unittest.TestCase):
 
     def test_not_to_str(self):
         self.assertEqual(str(Not(Var('x'))), '~x')
-
-    def test_not_with_expr_to_str(self):
         self.assertEqual(
             str(Not(Or(Var('x'), Var('y')))),
             '~[x | y]'
         )
 
-    def test_nested_and_or_to_str(self):
+    def test_binary_operators_to_str(self):
         self.assertEqual(
             str(And(Or(Var('a'), Var('b')), Var('c'))),
             '[a | b] & c'
         )
-
-    def test_nested_and_or_to_str2(self):
         self.assertEqual(
             str(Or(And(Var('a'), Var('b')), Var('c'))),
             'a & b | c'
         )
 
-    def test_nested_exists_and_forall_to_str(self):
+    def test_nested_exists_and_for_all_to_str(self):
         self.assertEqual(
             str(
                 And(
@@ -437,18 +439,6 @@ class FormulaToStrTest(unittest.TestCase):
                 )
             ),
             '[Ax.x] & [Ex.x]'
-        )
-
-    def test_nested_lambdas_to_str(self):
-        # This formula is semantically invalid but that doesn't matter.
-        self.assertEqual(
-            str(
-                And(
-                    Lambda('x', Var('x')),
-                    Lambda('y', Var('y'))
-                )
-            ),
-            '[Lx.x] & [Ly.y]'
         )
 
     def test_iota_to_str(self):
