@@ -50,7 +50,7 @@ class TreeToFormula(Transformer):
         return func
 
     def iota(self, matches):
-        return Iota(matches[0], matches[1])
+        return Iota(matches[1], matches[2])
 
     def not_e(self, matches):
         return Not(matches[1])
@@ -79,7 +79,7 @@ formula_parser = Lark('''
     lambda_: "L" SYMBOL "." expr
     forall: "A" SYMBOL "." expr
     exists: "E" SYMBOL "." expr
-    iota: "i" SYMBOL "." expr
+    iota: IOTA SYMBOL "." expr
 
     variable: SYMBOL
 
@@ -89,6 +89,8 @@ formula_parser = Lark('''
     IMPLIES: "->"
     IFF: "<->"
     NOT: "~"
+
+    IOTA: "i" | "ι"
 
     %import common.WS
     %ignore WS

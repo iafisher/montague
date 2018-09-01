@@ -34,6 +34,14 @@ class Formula:
         ]
         return self.__class__(*children)
 
+    def ascii_str(self):
+        """Render the formula as a string containing only ASCII characters.
+
+        The default implementation falls back to __str__. Subclasses whose
+        __str__ contains non-ASCII characters should override this method.
+        """
+        return str(self)
+
 
 class Var(Formula, namedtuple('Var', ['value'])):
     prec = 1
@@ -172,6 +180,10 @@ class Iota(Formula, namedtuple('Iota', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
+        return f'ι{self.symbol}.{self.body}'
+
+    def ascii_str(self):
+        # 'i' instead of 'ι'
         return f'i{self.symbol}.{self.body}'
 
     def replace_variable(self, variable, replacement):

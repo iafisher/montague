@@ -214,6 +214,11 @@ class FormulaParseTest(unittest.TestCase):
             parse_formula('i x.Man(x)'),
             Iota('x', Call(Var('Man'), Var('x')))
         )
+        # The actual Unicode iota character may be used.
+        self.assertTupleEqual(
+            parse_formula('ιx.Man(x)'),
+            Iota('x', Call(Var('Man'), Var('x')))
+        )
 
 
 class FormulaParseErrorTest(unittest.TestCase):
@@ -442,7 +447,9 @@ class FormulaToStrTest(unittest.TestCase):
         )
 
     def test_iota_to_str(self):
-        self.assertEqual(str(Iota('x', Var('x'))), 'ix.x')
+        tree = Iota('x', Var('x'))
+        self.assertEqual(str(tree), 'ιx.x')
+        self.assertEqual(tree.ascii_str(), 'ix.x')
 
 
 class TypeToStrTest(unittest.TestCase):
