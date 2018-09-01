@@ -32,13 +32,13 @@ class TreeToFormula(Transformer):
         return Var(matches[0])
 
     def lambda_(self, matches):
-        return Lambda(matches[0], matches[1])
+        return Lambda(matches[1], matches[2])
 
     def forall(self, matches):
-        return ForAll(matches[0], matches[1])
+        return ForAll(matches[1], matches[2])
 
     def exists(self, matches):
-        return Exists(matches[0], matches[1])
+        return Exists(matches[1], matches[2])
 
     def call(self, matches):
         # The parse tree allows n-ary functions but the AST only allows unary
@@ -76,9 +76,9 @@ formula_parser = Lark('''
     call: variable "(" _arglist ")" | "(" expr ")" "(" _arglist ")"
     _arglist: ( expr "," )* expr
 
-    lambda_: "L" SYMBOL "." expr
-    forall: "A" SYMBOL "." expr
-    exists: "E" SYMBOL "." expr
+    lambda_: LAMBDA SYMBOL "." expr
+    forall: FORALL SYMBOL "." expr
+    exists: EXISTS SYMBOL "." expr
     iota: IOTA SYMBOL "." expr
 
     variable: SYMBOL
@@ -90,6 +90,9 @@ formula_parser = Lark('''
     IFF: "<->"
     NOT: "~"
 
+    LAMBDA: "L" | "λ"
+    FORALL: "A" | "∀"
+    EXISTS: "E" | "∃"
     IOTA: "i" | "ι"
 
     %import common.WS

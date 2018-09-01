@@ -145,6 +145,16 @@ class FormulaParseTest(unittest.TestCase):
                 )
             )
         )
+        self.assertTupleEqual(
+            parse_formula('λx.λy.[x & y]'),
+            Lambda(
+                'x',
+                Lambda(
+                    'y',
+                    And(Var('x'), Var('y'))
+                )
+            )
+        )
 
     def test_parsing_call(self):
         self.assertTupleEqual(
@@ -194,6 +204,10 @@ class FormulaParseTest(unittest.TestCase):
             parse_formula('A x.x & y'),
             ForAll('x', And(Var('x'), Var('y')))
         )
+        self.assertTupleEqual(
+            parse_formula('∀x.x & y'),
+            ForAll('x', And(Var('x'), Var('y')))
+        )
 
     def test_parsing_exists(self):
         self.assertTupleEqual(
@@ -202,6 +216,10 @@ class FormulaParseTest(unittest.TestCase):
         )
         self.assertTupleEqual(
             parse_formula('E x.x | y'),
+            Exists('x', Or(Var('x'), Var('y')))
+        )
+        self.assertTupleEqual(
+            parse_formula('∃x.x | y'),
             Exists('x', Or(Var('x'), Var('y')))
         )
 
@@ -379,10 +397,9 @@ class FormulaToStrTest(unittest.TestCase):
         )
 
     def test_lambda_to_str(self):
-        self.assertEqual(
-            str(Lambda('x', And(Var('a'), Var('x')))),
-            'Lx.a & x'
-        )
+        tree = Lambda('x', And(Var('a'), Var('x')))
+        self.assertEqual(str(tree), 'λx.a & x')
+        self.assertEqual(tree.ascii_str(), 'Lx.a & x')
         # This formula is semantically invalid but that doesn't matter.
         self.assertEqual(
             str(
@@ -391,7 +408,7 @@ class FormulaToStrTest(unittest.TestCase):
                     Lambda('y', Var('y'))
                 )
             ),
-            '[Lx.x] & [Ly.y]'
+            '[λx.x] & [λy.y]'
         )
 
     def test_call_to_str(self):
@@ -402,21 +419,19 @@ class FormulaToStrTest(unittest.TestCase):
                     Lambda('x', Var('x'))
                 )
             ),
-            'P(a & b, Lx.x)'
+            'P(a & b, λx.x)'
         )
         self.assertEqual(str(Call(Var('P'), Var('x'))), 'P(x)')
 
     def test_for_all_to_str(self):
-        self.assertEqual(
-            str(ForAll('x', Call(Var('P'), Var('x')))),
-            'Ax.P(x)'
-        )
+        tree = ForAll('x', Call(Var('P'), Var('x')))
+        self.assertEqual(str(tree), '∀ x.P(x)')
+        self.assertEqual(tree.ascii_str(), 'Ax.P(x)')
 
     def test_exists_to_str(self):
-        self.assertEqual(
-            str(Exists('x', Call(Var('P'), Var('x')))),
-            'Ex.P(x)'
-        )
+        tree = Exists('x', Call(Var('P'), Var('x')))
+        self.assertEqual(str(tree), '∃ x.P(x)')
+        self.assertEqual(tree.ascii_str(), 'Ex.P(x)')
 
     def test_not_to_str(self):
         self.assertEqual(str(Not(Var('x'))), '~x')
@@ -443,7 +458,7 @@ class FormulaToStrTest(unittest.TestCase):
                     Exists('x', Var('x'))
                 )
             ),
-            '[Ax.x] & [Ex.x]'
+            '[∀ x.x] & [∃ x.x]'
         )
 
     def test_iota_to_str(self):

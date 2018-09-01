@@ -102,6 +102,9 @@ class Lambda(Formula, namedtuple('Lambda', ['parameter', 'body'])):
     prec = 5
 
     def __str__(self):
+        return f'λ{self.parameter}.{self.body}'
+
+    def ascii_str(self):
         return f'L{self.parameter}.{self.body}'
 
     def replace_variable(self, variable, replacement):
@@ -148,6 +151,9 @@ class ForAll(Formula, namedtuple('ForAll', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
+        return f'∀ {self.symbol}.{self.body}'
+
+    def ascii_str(self):
         return f'A{self.symbol}.{self.body}'
 
     def replace_variable(self, variable, replacement):
@@ -164,6 +170,9 @@ class Exists(Formula, namedtuple('Exists', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
+        return f'∃ {self.symbol}.{self.body}'
+
+    def ascii_str(self):
         return f'E{self.symbol}.{self.body}'
 
     def replace_variable(self, variable, replacement):
