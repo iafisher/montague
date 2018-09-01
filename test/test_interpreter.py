@@ -1,6 +1,6 @@
 import unittest
 
-from montague.formula import And, Call, Exists, ForAll, Not, Var
+from montague.ast import *
 from montague.interpreter import WorldModel, interpret_formula
 
 

@@ -1,10 +1,7 @@
 import unittest
 
-from montague.formula import (
-    And, Call, ComplexType, Exists, ForAll, IfAndOnlyIf, IfThen, Lambda, Not,
-    Or, Var, parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT,
-    TYPE_TRUTH_VALUE, TYPE_WORLD,
-)
+from montague.ast import *
+from montague.formula import parse_formula, parse_type
 
 from lark.exceptions import LarkError
 

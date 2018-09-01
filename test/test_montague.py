@@ -1,9 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from montague.formula import (
-    Call, ComplexType, Lambda, Var, TYPE_ENTITY, TYPE_TRUTH_VALUE,
-)
+from montague.ast import *
 from montague.montague import ShellState, execute_command, HELP_MESSAGE
 from montague.translator import LexiconEntry
 

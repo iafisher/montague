@@ -2,10 +2,8 @@ import json
 import os
 import unittest
 
-from montague.formula import (
-    And, Call, ComplexType, Exists, ForAll, IfThen, Lambda, Or, Var,
-    parse_formula, parse_type, TYPE_ENTITY, TYPE_EVENT, TYPE_TRUTH_VALUE,
-)
+from montague.ast import *
+from montague.formula import parse_formula, parse_type
 from montague.translator import (
     LexiconEntry, LexiconError, TranslationError, can_combine, combine,
     load_lexicon, translate_sentence,
