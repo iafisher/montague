@@ -3,7 +3,7 @@ import os
 import unittest
 
 from montague.ast import *
-from montague.formula import parse_formula, parse_type
+from montague.parser import parse_formula, parse_type
 from montague.translator import (
     LexiconEntry, LexiconError, TranslationError, can_combine, combine,
     load_lexicon, translate_sentence,

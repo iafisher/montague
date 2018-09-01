@@ -1,7 +1,7 @@
 import unittest
 
 from montague.ast import *
-from montague.formula import parse_formula, parse_type
+from montague.parser import parse_formula, parse_type
 
 from lark.exceptions import LarkError
 
