@@ -45,8 +45,6 @@ class MontagueShellTest(unittest.TestCase):
             'good',
             Call(Var('Good'), Var('j')),
             TYPE_TRUTH_VALUE,
-            None,
-            None
         )
         response = execute_command('John is good', self.shell_state)
         self.assertIn('Denotation: Good(j)', response)

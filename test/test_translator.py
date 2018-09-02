@@ -122,9 +122,9 @@ class TranslatorTest(unittest.TestCase):
 
 class CombinerTest(unittest.TestCase):
     pred = SentenceNode(
-        'does', parse_formula('Lx.P(x)'), parse_type('<e, t>'), None, None
+        'does', parse_formula('Lx.P(x)'), parse_type('<e, t>')
     )
-    entity = SentenceNode('me', Var('me'), TYPE_ENTITY, None, None)
+    entity = SentenceNode('me', Var('me'), TYPE_ENTITY)
 
     def test_saturate_predicate(self):
         self.assertTrue(can_combine(self.pred, self.entity))

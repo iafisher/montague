@@ -60,8 +60,6 @@ def combine(term1, term2):
             term1.text + ' ' + term2.text,
             Call(term1.formula, term2.formula),
             term1.type.right,
-            term1,
-            term2
         )
     elif can_combine(term2, term1):
         return SentenceNode(
@@ -69,8 +67,6 @@ def combine(term1, term2):
             term1.text + ' ' + term2.text,
             Call(term2.formula, term1.formula),
             term2.type.right,
-            term2,
-            term1
         )
     else:
         raise CombinationError

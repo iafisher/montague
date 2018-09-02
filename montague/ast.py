@@ -246,15 +246,9 @@ TYPE_EVENT = AtomicType('v')
 TYPE_WORLD = AtomicType('s')
 
 
-# The class to represent English sentences as trees. `left` and `right` may be
-# None. `text` is the English text corresponding to the node and all the nodes
-# it dominates.
-SentenceNode = namedtuple(
-    'SentenceNode', ['text', 'formula', 'type', 'left', 'right']
-)
-# `left` and `right` default to None.
-# Courtesy of https://stackoverflow.com/questions/11351032/
-SentenceNode.__new__.__defaults__ = (None, None)
+# The class to represent English sentences as logical formulas. `text` is the
+# English text corresponding to the node.
+SentenceNode = namedtuple('SentenceNode', ['text', 'formula', 'type'])
 
 
 def wrapb(parent, child, right):
