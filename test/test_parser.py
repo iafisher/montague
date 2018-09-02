@@ -455,6 +455,14 @@ class FormulaToStrTest(unittest.TestCase):
             str(Or(And(Var('a'), Var('b')), Var('c'))),
             'a & b | c'
         )
+        self.assertEqual(
+            str(Or(Var('a'), Or(Var('b'), Var('c')))),
+            'a | b | c'
+        )
+        self.assertEqual(
+            str(And(Var('a'), And(Var('b'), Var('c')))),
+            'a & b & c'
+        )
 
     def test_nested_exists_and_for_all_to_str(self):
         self.assertEqual(

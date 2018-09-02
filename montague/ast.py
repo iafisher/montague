@@ -63,8 +63,8 @@ class And(Formula, namedtuple('And', ['left', 'right'])):
 
     def __str__(self):
         # wrapb applies brackets if needed for the proper precedence.
-        left = wrapb(self, self.left, False)
-        right = wrapb(self, self.right, True)
+        left = wrapb(self, self.left)
+        right = wrapb(self, self.right)
         return f'{left} & {right}'
 
 
@@ -72,8 +72,8 @@ class Or(Formula, namedtuple('Or', ['left', 'right'])):
     prec = 3
 
     def __str__(self):
-        left = wrapb(self, self.left, False)
-        right = wrapb(self, self.right, True)
+        left = wrapb(self, self.left)
+        right = wrapb(self, self.right)
         return f'{left} | {right}'
 
 
@@ -81,8 +81,8 @@ class IfThen(Formula, namedtuple('IfThen', ['left', 'right'])):
     prec = 4
 
     def __str__(self):
-        left = wrapb(self, self.left, False)
-        right = wrapb(self, self.right, True)
+        left = wrapb(self, self.left)
+        right = wrapb(self, self.right)
         return f'{left} -> {right}'
 
 
@@ -90,8 +90,8 @@ class IfAndOnlyIf(Formula, namedtuple('IfAndOnlyIf', ['left', 'right'])):
     prec = 4
 
     def __str__(self):
-        left = wrapb(self, self.left, False)
-        right = wrapb(self, self.right, True)
+        left = wrapb(self, self.left)
+        right = wrapb(self, self.right)
         return f'{left} <-> {right}'
 
 
@@ -99,7 +99,7 @@ class Not(Formula, namedtuple('Not', ['operand'])):
     prec = 1
 
     def __str__(self):
-        operand = wrapb(self, self.operand, False)
+        operand = wrapb(self, self.operand)
         return f'~{operand}'
 
 
@@ -251,11 +251,11 @@ TYPE_WORLD = AtomicType('s')
 SentenceNode = namedtuple('SentenceNode', ['text', 'formula', 'type'])
 
 
-def wrapb(parent, child, right):
+def wrapb(parent, child):
     """Return the child node as a string, wrapped in brackets if its precedence
     is higher than the parent node.
     """
-    if child.prec > parent.prec or child.prec == parent.prec and right:
+    if child.prec > parent.prec:
         return f'[{child}]'
     else:
         return str(child)
