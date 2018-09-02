@@ -5,9 +5,10 @@ Version: September 2018
 """
 from collections import namedtuple
 
-from lark.exceptions import LarkError
-
 from .ast import *
+from .exceptions import (
+    CombinationError, LexiconError, ParseError, TranslationError,
+)
 from .parser import parse_formula, parse_type
 
 
@@ -80,21 +81,6 @@ def can_combine(term1, term2):
     return isinstance(term1.type, ComplexType) and term1.type.left == term2.type
 
 
-class CombinationError(Exception):
-    """When two expressions cannot be combined."""
-    pass
-
-
-class TranslationError(Exception):
-    """When an English sentence cannot be translated into logic."""
-    pass
-
-
-class LexiconError(Exception):
-    """When the lexicon is ill-formatted."""
-    pass
-
-
 def load_lexicon(lexicon_json):
     """Load the lexicon from a dictionary.
 
@@ -108,14 +94,14 @@ def load_lexical_entry(key, value):
         denotation = parse_formula(value['d'])
     except KeyError:
         raise LexiconError(f'entry for {key} has no "d" field')
-    except LarkError as e:
+    except ParseError as e:
         raise LexiconError(f'could not parse denotation of {key} ({e})')
 
     try:
         type_ = parse_type(value['t'])
     except KeyError:
         raise LexiconError(f'entry for {key} has no "t" field')
-    except LarkError as e:
+    except ParseError as e:
         raise LexiconError(f'could not parse type of {key} ({e})')
 
     return SentenceNode(key, denotation, type_)

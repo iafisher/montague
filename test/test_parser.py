@@ -1,9 +1,8 @@
 import unittest
 
 from montague.ast import *
+from montague.exceptions import ParseError
 from montague.parser import parse_formula, parse_type
-
-from lark.exceptions import LarkError
 
 
 class FormulaParseTest(unittest.TestCase):
@@ -241,49 +240,49 @@ class FormulaParseTest(unittest.TestCase):
 
 class FormulaParseErrorTest(unittest.TestCase):
     def test_missing_operand(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('a | ')
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('b & ')
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('| a')
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('& b')
 
     def test_parsing_hanging_bracket(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('[x | y')
 
     def test_lambda_missing_body(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('Lx.')
 
     def test_for_all_missing_body(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('Ax.')
 
     def test_exists_missing_body(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('Ex.')
 
     def test_iota_missing_body(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('ix.')
 
     def test_call_with_no_arg(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('Happy()')
 
     def test_unknown_token(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('Lx.x?')
 
     def test_empty_string(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('')
 
     def test_blank(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_formula('     \t    \n \r \f')
 
 
@@ -344,43 +343,43 @@ class TypeParseTest(unittest.TestCase):
 
 class TypeParseErrorTest(unittest.TestCase):
     def test_missing_opening_bracket(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('e, t>')
 
     def test_missing_closing_bracket(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('<e, t')
 
     def test_trailing_input(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('<e, t> e')
 
     def test_missing_comma(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('<e t>')
 
     def test_missing_output_type(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('<e>')
 
     def test_invalid_abbreviation(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('evt')
 
     def test_invalid_letter(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('b')
 
     def test_unknown_token(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('e?')
 
     def test_empty_string(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('')
 
     def test_blank(self):
-        with self.assertRaises(LarkError):
+        with self.assertRaises(ParseError):
             parse_type('     \t    \n \r \f')
 
 

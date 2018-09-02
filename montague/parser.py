@@ -2,13 +2,15 @@
 expressions.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: August 2018
+Version: September 2018
 """
 from collections import namedtuple
 
 from lark import Lark, Transformer
+from lark.exceptions import LarkError
 
 from .ast import *
+from .exceptions import ParseError
 
 
 class TreeToFormula(Transformer):
@@ -103,9 +105,12 @@ formula_parser = Lark('''
 def parse_formula(formula):
     """Parse `formula`, a string, into a tree of Formula objects.
 
-    If the string cannot be parsed, a LarkError is raised.
+    If the string cannot be parsed, a montague.exceptions.ParseError is raised.
     """
-    return formula_parser.parse(formula)
+    try:
+        return formula_parser.parse(formula)
+    except LarkError as e:
+        raise ParseError(str(e)) from None
 
 
 class TreeToType(Transformer):
@@ -141,6 +146,9 @@ type_parser = Lark('''
 def parse_type(typestring):
     """Parse `typestring` into a tree of ComplexType and AtomicType objects.
 
-    If the string cannot be parsed, a LarkError is raised.
+    If the string cannot be parsed, a montague.exceptions.ParseError is raised.
     """
-    return type_parser.parse(typestring)
+    try:
+        return type_parser.parse(typestring)
+    except LarkError as e:
+        raise ParseError(str(e)) from None
