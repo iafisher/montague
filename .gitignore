@@ -2,3 +2,6 @@
 __pycache__
 *.pyc
 *.pyo
+
+# Script I use for quick testing
+/m
