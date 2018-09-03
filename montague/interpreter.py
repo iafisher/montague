@@ -32,44 +32,37 @@ def interpret_formula(formula, model):
         arg = interpret_formula(formula.arg, model)
         return arg in caller
     elif isinstance(formula, ForAll):
-        old_value = model.assignments.get(formula.symbol)
-        # Check that every assignment of an individual to the universal variable
-        # results in a true proposition.
-        for individual in model.individuals:
-            model.assignments[formula.symbol] = individual
-            if not interpret_formula(formula.body, model):
-                model.assignments[formula.symbol] = old_value
-                return False
-        model.assignments[formula.symbol] = old_value
-        return True
+        return (
+            len(satisfiers(formula.body, model, formula.symbol))
+            == len(model.individuals)
+        )
     elif isinstance(formula, Exists):
-        old_value = model.assignments.get(formula.symbol)
-        # Check that any assignment of an individual to the existential variable
-        # results in a true proposition.
-        for individual in model.individuals:
-            model.assignments[formula.symbol] = individual
-            if interpret_formula(formula.body, model):
-                model.assignments[formula.symbol] = old_value
-                return True
-        model.assignments[formula.symbol] = old_value
-        return False
+        return len(satisfiers(formula.body, model, formula.symbol)) > 0
     elif isinstance(formula, Not):
         return not interpret_formula(formula.operand, model)
     elif isinstance(formula, Iota):
-        old_value = model.assignments.get(formula.symbol)
-        reference = None
-        # Find the unique individual that satisfies the body.
-        for individual in model.individuals:
-            model.assignments[formula.symbol] = individual
-            if interpret_formula(formula.body, model):
-                if reference is None:
-                    reference = individual
-                else:
-                    # More than one individual satisfies the body, so the
-                    # denotation of the expression is undefined.
-                    return None
-        return reference
+        sset = satisfiers(formula.body, model, formula.symbol)
+        if len(sset) == 1:
+            return sset.pop()
+        else:
+            return None
     else:
         # TODO: Handle LambdaNodes differently (they can't be interpreted, but
         # they should give a better error message).
-        raise Exception('Unhandled class', formula.__class__)
+        raise NotImplementedError(formula.__class__)
+
+
+def satisfiers(formula, model, variable):
+    individuals = set()
+    old_value = model.assignments.get(variable)
+    for individual in model.individuals:
+        model.assignments[variable] = individual
+        if interpret_formula(formula, model):
+            individuals.add(individual)
+
+    if old_value is None:
+        del model.assignments[variable]
+    else:
+        model.assignments[variable] = old_value
+
+    return individuals

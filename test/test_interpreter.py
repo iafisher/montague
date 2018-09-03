@@ -1,7 +1,7 @@
 import unittest
 
 from montague.ast import *
-from montague.interpreter import WorldModel, interpret_formula
+from montague.interpreter import WorldModel, interpret_formula, satisfiers
 
 
 John = object()
@@ -13,11 +13,11 @@ test_model = WorldModel(
     {
         'j': John,
         'm': Mary,
-        'Good': set([John]),
-        'Bad': set([Mary]),
-        'Man': set([John]),
-        'Human': set([Mary, John]),
-        'Alien': set([]),
+        'Good': {John},
+        'Bad': {Mary},
+        'Man': {John},
+        'Human': {Mary, John},
+        'Alien': set(),
     }
 )
 
@@ -67,3 +67,30 @@ class InterpreterTest(unittest.TestCase):
     def test_the_human_is_undefined(self):
         formula = Iota('x', Call(Var('Human'), Var('x')))
         self.assertEqual(interpret_formula(formula, test_model), None)
+
+
+class SatisfiersTest(unittest.TestCase):
+    def test_good_set(self):
+        sset = satisfiers(Call(Var('Good'), Var('x')), test_model, 'x')
+        self.assertSetEqual(sset, {John})
+
+    def test_bad_set(self):
+        sset = satisfiers(Call(Var('Bad'), Var('x')), test_model, 'x')
+        self.assertSetEqual(sset, {Mary})
+
+    def test_human_set(self):
+        sset = satisfiers(Call(Var('Human'), Var('x')), test_model, 'x')
+        self.assertSetEqual(sset, {John, Mary})
+
+    def test_alien_set(self):
+        sset = satisfiers(Call(Var('Alien'), Var('x')), test_model, 'x')
+        self.assertSetEqual(sset, set())
+
+    def test_does_not_overwrite_assignment(self):
+        model = WorldModel({Mary}, {'j': John})
+        satisfiers(Var('j'), model, 'j')
+        self.assertEqual(model.assignments['j'], John)
+
+    def test_does_not_create_assignment(self):
+        satisfiers(Var('j'), test_model, 'some_nonexistent_variable')
+        self.assertNotIn('some_nonexistent_variable', test_model.assignments)
