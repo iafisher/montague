@@ -18,7 +18,7 @@ test_model = WorldModel(
         'Man': {John},
         'Human': {Mary, John},
         'Alien': set(),
-    }
+    },
 )
 
 
@@ -34,10 +34,7 @@ class InterpreterTest(unittest.TestCase):
         self.assertTrue(interpret_formula(Not(formula), test_model))
 
     def test_mary_is_bad_and_john_is_good_is_true(self):
-        formula = And(
-            Call(Var('Bad'), Var('m')),
-            Call(Var('Good'), Var('j'))
-        )
+        formula = And(Call(Var('Bad'), Var('m')), Call(Var('Good'), Var('j')))
         self.assertTrue(interpret_formula(formula, test_model))
 
     def test_everyone_is_bad_is_false(self):

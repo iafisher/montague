@@ -19,22 +19,24 @@ def interpret_formula(formula, model):
     if isinstance(formula, Var):
         return model.assignments[formula.value]
     elif isinstance(formula, And):
-        return interpret_formula(formula.left, model) \
-            and interpret_formula(formula.right, model)
+        return interpret_formula(formula.left, model) and interpret_formula(
+            formula.right, model
+        )
     elif isinstance(formula, Or):
-        return interpret_formula(formula.left, model) \
-            or interpret_formula(formula.right, model)
+        return interpret_formula(formula.left, model) or interpret_formula(
+            formula.right, model
+        )
     elif isinstance(formula, IfThen):
-        return not interpret_formula(formula.left, model) \
-            or interpret_formula(formula.right, model)
+        return not interpret_formula(formula.left, model) or interpret_formula(
+            formula.right, model
+        )
     elif isinstance(formula, Call):
         caller = interpret_formula(formula.caller, model)
         arg = interpret_formula(formula.arg, model)
         return arg in caller
     elif isinstance(formula, ForAll):
-        return (
-            len(satisfiers(formula.body, model, formula.symbol))
-            == len(model.individuals)
+        return len(satisfiers(formula.body, model, formula.symbol)) == len(
+            model.individuals
         )
     elif isinstance(formula, Exists):
         return len(satisfiers(formula.body, model, formula.symbol)) > 0

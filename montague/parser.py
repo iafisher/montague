@@ -59,7 +59,8 @@ class TreeToFormula(Transformer):
 
 
 # The grammar of the logical language.
-formula_parser = Lark('''
+formula_parser = Lark(
+    '''
     ?start: expr
 
     ?expr: ifterm | ifterm IMPLIES expr | ifterm IFF expr
@@ -99,7 +100,10 @@ formula_parser = Lark('''
 
     %import common.WS
     %ignore WS
-''', parser='lalr', transformer=TreeToFormula())
+''',
+    parser='lalr',
+    transformer=TreeToFormula(),
+)
 
 
 def parse_formula(formula):
@@ -117,14 +121,13 @@ class TreeToType(Transformer):
     """Transform Lark's parse tree into a type tree with ComplexType and
     AtomicType objects.
     """
+
     def type(self, matches):
         if len(matches) == 2:
             return ComplexType(matches[0], matches[1])
         elif len(matches) == 1:
             if len(matches[0]) == 2:
-                return ComplexType(
-                    AtomicType(matches[0][0]), AtomicType(matches[0][1])
-                )
+                return ComplexType(AtomicType(matches[0][0]), AtomicType(matches[0][1]))
             else:
                 return AtomicType(matches[0])
         else:
@@ -132,7 +135,8 @@ class TreeToType(Transformer):
 
 
 # The grammar of the type mini-language.
-type_parser = Lark('''
+type_parser = Lark(
+    '''
     ?start: type
 
     type: "<" type "," type ">"
@@ -140,7 +144,10 @@ type_parser = Lark('''
 
     %import common.WS
     %ignore WS
-''', parser='lalr', transformer=TreeToType())
+''',
+    parser='lalr',
+    transformer=TreeToType(),
+)
 
 
 def parse_type(typestring):

@@ -6,9 +6,7 @@ Version: September 2018
 from collections import namedtuple
 
 from .ast import *
-from .exceptions import (
-    CombinationError, LexiconError, ParseError, TranslationError,
-)
+from .exceptions import CombinationError, LexiconError, ParseError, TranslationError
 from .parser import parse_formula, parse_type
 
 
@@ -29,7 +27,7 @@ def translate_sentence(sentence, lexicon):
         i = 0
         while i < len(terms) - 1:
             try:
-                new_terms.append(combine(terms[i], terms[i+1]))
+                new_terms.append(combine(terms[i], terms[i + 1]))
                 i += 2
             except CombinationError:
                 new_terms.append(terms[i])
@@ -41,8 +39,9 @@ def translate_sentence(sentence, lexicon):
             raise TranslationError(
                 'Could not translate the sentence: '
                 + 'no way to merge '
-                + ', '.join(f'[{term.text} ({term.type.concise_str()})]'
-                    for term in terms)
+                + ', '.join(
+                    f'[{term.text} ({term.type.concise_str()})]' for term in terms
+                )
             )
         previous = len(terms)
     root = terms[0]._replace(formula=terms[0].formula.simplify())

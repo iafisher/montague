@@ -60,10 +60,7 @@ def execute_command(command, shell_state):
                     + f'Remaining in {shell_state.mode} mode.'
                 )
         elif command == 'help':
-            return (
-                HELP_MESSAGE
-                + f'\nYou are currently in {shell_state.mode} mode.'
-            )
+            return HELP_MESSAGE + f'\nYou are currently in {shell_state.mode} mode.'
         else:
             return f'Unrecognized command {command}.'
     else:

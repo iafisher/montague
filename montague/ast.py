@@ -23,8 +23,8 @@ class Formula:
         children. Subclasses may need to override this implementation.
         """
         children = [
-            c.replace_variable(variable, replacement) if isinstance(c, Formula)
-            else c for c in self
+            c.replace_variable(variable, replacement) if isinstance(c, Formula) else c
+            for c in self
         ]
         return self.__class__(*children)
 
@@ -34,9 +34,7 @@ class Formula:
         The default implementation recursively simplifies each child. Subclasses
         may need to override this implementation.
         """
-        children = [
-            c.simplify() if isinstance(c, Formula) else c for c in self
-        ]
+        children = [c.simplify() if isinstance(c, Formula) else c for c in self]
         return self.__class__(*children)
 
     def ascii_str(self):
@@ -115,8 +113,7 @@ class Lambda(Formula, namedtuple('Lambda', ['parameter', 'body'])):
     def replace_variable(self, variable, replacement):
         if variable != self.parameter:
             return Lambda(
-                self.parameter,
-                self.body.replace_variable(variable, replacement)
+                self.parameter, self.body.replace_variable(variable, replacement)
             )
         else:
             return self
@@ -146,8 +143,7 @@ class Call(Formula, namedtuple('Call', ['caller', 'arg'])):
         caller = self.caller.simplify()
         arg = self.arg.simplify()
         if isinstance(caller, Lambda):
-            return caller.body.replace_variable(caller.parameter, arg) \
-                .simplify()
+            return caller.body.replace_variable(caller.parameter, arg).simplify()
         else:
             return Call(self.caller, arg)
 
@@ -164,8 +160,7 @@ class ForAll(Formula, namedtuple('ForAll', ['symbol', 'body'])):
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
             return ForAll(
-                self.symbol,
-                self.body.replace_variable(variable, replacement)
+                self.symbol, self.body.replace_variable(variable, replacement)
             )
         else:
             return self
@@ -183,8 +178,7 @@ class Exists(Formula, namedtuple('Exists', ['symbol', 'body'])):
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
             return Exists(
-                self.symbol,
-                self.body.replace_variable(variable, replacement)
+                self.symbol, self.body.replace_variable(variable, replacement)
             )
         else:
             return self
@@ -202,10 +196,7 @@ class Iota(Formula, namedtuple('Iota', ['symbol', 'body'])):
 
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
-            return Iota(
-                self.symbol,
-                self.body.replace_variable(variable, replacement)
-            )
+            return Iota(self.symbol, self.body.replace_variable(variable, replacement))
         else:
             return self
 
@@ -227,8 +218,7 @@ class ComplexType(namedtuple('ComplexType', ['left', 'right'])):
            >>> typ.concise_str()
            'et'
         """
-        if isinstance(self.left, AtomicType) \
-           and isinstance(self.right, AtomicType):
+        if isinstance(self.left, AtomicType) and isinstance(self.right, AtomicType):
             return f'{self.left}{self.right}'
         else:
             return f'<{self.left.concise_str()}, {self.right.concise_str()}>'

@@ -9,232 +9,118 @@ class FormulaParseTest(unittest.TestCase):
     def test_parsing_variable(self):
         self.assertTupleEqual(parse_formula('a'), Var('a'))
         self.assertTupleEqual(
-            parse_formula("s8DVY_BUvybJH-VDNS'JhjS"),
-            Var('s8DVY_BUvybJH-VDNS\'JhjS')
+            parse_formula("s8DVY_BUvybJH-VDNS'JhjS"), Var('s8DVY_BUvybJH-VDNS\'JhjS')
         )
 
     def test_parsing_conjunction(self):
+        self.assertTupleEqual(parse_formula("a & a'"), And(Var('a'), Var('a\'')))
         self.assertTupleEqual(
-            parse_formula("a & a'"),
-            And(Var('a'), Var('a\''))
-        )
-        self.assertTupleEqual(
-            parse_formula('a & b & c'),
-            And(
-                Var('a'),
-                And(
-                    Var('b'),
-                    Var('c')
-                )
-            )
+            parse_formula('a & b & c'), And(Var('a'), And(Var('b'), Var('c')))
         )
 
     def test_parsing_disjunction(self):
+        self.assertTupleEqual(parse_formula('b | b0'), Or(Var('b'), Var('b0')))
         self.assertTupleEqual(
-            parse_formula('b | b0'),
-            Or(Var('b'), Var('b0'))
-        )
-        self.assertTupleEqual(
-            parse_formula('a | b | c'),
-            Or(
-                Var('a'),
-                Or(
-                    Var('b'),
-                    Var('c')
-                )
-            )
+            parse_formula('a | b | c'), Or(Var('a'), Or(Var('b'), Var('c')))
         )
 
     def test_parsing_if_then(self):
+        self.assertTupleEqual(parse_formula('a -> b'), IfThen(Var('a'), Var('b')))
         self.assertTupleEqual(
-            parse_formula('a -> b'),
-            IfThen(Var('a'), Var('b'))
-        )
-        self.assertTupleEqual(
-            parse_formula('a -> b -> c'),
-            IfThen(
-                Var('a'),
-                IfThen(
-                    Var('b'),
-                    Var('c')
-                )
-            )
+            parse_formula('a -> b -> c'), IfThen(Var('a'), IfThen(Var('b'), Var('c')))
         )
 
     def test_parsing_if_and_only_if(self):
-        self.assertTupleEqual(
-            parse_formula('a <-> b'),
-            IfAndOnlyIf(
-                Var('a'),
-                Var('b')
-            )
-        )
+        self.assertTupleEqual(parse_formula('a <-> b'), IfAndOnlyIf(Var('a'), Var('b')))
         self.assertTupleEqual(
             parse_formula('a <-> b <-> c'),
-            IfAndOnlyIf(
-                Var('a'),
-                IfAndOnlyIf(
-                    Var('b'),
-                    Var('c')
-                )
-            )
+            IfAndOnlyIf(Var('a'), IfAndOnlyIf(Var('b'), Var('c'))),
         )
 
     def test_parsing_negation(self):
         self.assertEqual(parse_formula('~a'), Not(Var('a')))
-        self.assertEqual(
-            parse_formula('~a | b'),
-            Or(Not(Var('a')), Var('b'))
-        )
-        self.assertEqual(
-            parse_formula('~[a | b]'),
-            Not(Or(Var('a'), Var('b')))
-        )
+        self.assertEqual(parse_formula('~a | b'), Or(Not(Var('a')), Var('b')))
+        self.assertEqual(parse_formula('~[a | b]'), Not(Or(Var('a'), Var('b'))))
 
     def test_parsing_binary_precedence(self):
         self.assertTupleEqual(
             parse_formula('x & y | z -> m'),
-            IfThen(
-                Or(
-                    And(Var('x'), Var('y')),
-                    Var('z')
-                ),
-                Var('m')
-            )
+            IfThen(Or(And(Var('x'), Var('y')), Var('z')), Var('m')),
         )
         self.assertTupleEqual(
             parse_formula('x | y -> m & z'),
-            IfThen(
-                Or(
-                    Var('x'),
-                    Var('y'),
-                ),
-                And(
-                    Var('m'),
-                    Var('z')
-                )
-            )
+            IfThen(Or(Var('x'), Var('y')), And(Var('m'), Var('z'))),
         )
         self.assertTupleEqual(
-            parse_formula('[x | y] & z'),
-            And(
-                Or(Var('x'), Var('y')),
-                Var('z')
-            )
+            parse_formula('[x | y] & z'), And(Or(Var('x'), Var('y')), Var('z'))
         )
 
     def test_parsing_lambda(self):
         self.assertTupleEqual(
             parse_formula('Lx.Ly.[x & y]'),
-            Lambda(
-                'x',
-                Lambda(
-                    'y',
-                    And(Var('x'), Var('y'))
-                )
-            )
+            Lambda('x', Lambda('y', And(Var('x'), Var('y')))),
         )
         self.assertEqual(
             parse_formula('L x.L y.[x & y]'),
-            Lambda(
-                'x',
-                Lambda(
-                    'y',
-                    And(Var('x'), Var('y'))
-                )
-            )
+            Lambda('x', Lambda('y', And(Var('x'), Var('y')))),
         )
         self.assertTupleEqual(
             parse_formula('λx.λy.[x & y]'),
-            Lambda(
-                'x',
-                Lambda(
-                    'y',
-                    And(Var('x'), Var('y'))
-                )
-            )
+            Lambda('x', Lambda('y', And(Var('x'), Var('y')))),
         )
 
     def test_parsing_call(self):
-        self.assertTupleEqual(
-            parse_formula('Happy(x)'),
-            Call(Var('Happy'), Var('x'))
-        )
+        self.assertTupleEqual(parse_formula('Happy(x)'), Call(Var('Happy'), Var('x')))
         self.assertTupleEqual(
             parse_formula('Between(x, y & z, [Capital(france)])'),
             Call(
-                Call(
-                    Call(
-                        Var('Between'),
-                        Var('x')
-                    ),
-                    And(Var('y'), Var('z')),
-                ),
+                Call(Call(Var('Between'), Var('x')), And(Var('y'), Var('z'))),
                 Call(Var('Capital'), Var('france')),
-            )
+            ),
         )
         self.assertTupleEqual(
-            parse_formula('(Lx.x)(j)'),
-            Call(
-                Lambda('x', Var('x')),
-                Var('j')
-            )
+            parse_formula('(Lx.x)(j)'), Call(Lambda('x', Var('x')), Var('j'))
         )
         self.assertTupleEqual(
             parse_formula('((Lx.Ly.x & y) (a)) (b)'),
             Call(
-                Call(
-                    Lambda(
-                        'x',
-                        Lambda('y', And(Var('x'), Var('y')))
-                    ),
-                    Var('a')
-                ),
-                Var('b')
-            )
+                Call(Lambda('x', Lambda('y', And(Var('x'), Var('y')))), Var('a')),
+                Var('b'),
+            ),
         )
 
     def test_parsing_for_all(self):
         self.assertTupleEqual(
-            parse_formula('Ax.x & y'),
-            ForAll('x', And(Var('x'), Var('y')))
+            parse_formula('Ax.x & y'), ForAll('x', And(Var('x'), Var('y')))
         )
         self.assertTupleEqual(
-            parse_formula('A x.x & y'),
-            ForAll('x', And(Var('x'), Var('y')))
+            parse_formula('A x.x & y'), ForAll('x', And(Var('x'), Var('y')))
         )
         self.assertTupleEqual(
-            parse_formula('∀x.x & y'),
-            ForAll('x', And(Var('x'), Var('y')))
+            parse_formula('∀x.x & y'), ForAll('x', And(Var('x'), Var('y')))
         )
 
     def test_parsing_exists(self):
         self.assertTupleEqual(
-            parse_formula('Ex.x | y'),
-            Exists('x', Or(Var('x'), Var('y')))
+            parse_formula('Ex.x | y'), Exists('x', Or(Var('x'), Var('y')))
         )
         self.assertTupleEqual(
-            parse_formula('E x.x | y'),
-            Exists('x', Or(Var('x'), Var('y')))
+            parse_formula('E x.x | y'), Exists('x', Or(Var('x'), Var('y')))
         )
         self.assertTupleEqual(
-            parse_formula('∃x.x | y'),
-            Exists('x', Or(Var('x'), Var('y')))
+            parse_formula('∃x.x | y'), Exists('x', Or(Var('x'), Var('y')))
         )
 
     def test_parsing_iota(self):
         self.assertTupleEqual(
-            parse_formula('ix.Man(x)'),
-            Iota('x', Call(Var('Man'), Var('x')))
+            parse_formula('ix.Man(x)'), Iota('x', Call(Var('Man'), Var('x')))
         )
         self.assertTupleEqual(
-            parse_formula('i x.Man(x)'),
-            Iota('x', Call(Var('Man'), Var('x')))
+            parse_formula('i x.Man(x)'), Iota('x', Call(Var('Man'), Var('x')))
         )
         # The actual Unicode iota character may be used.
         self.assertTupleEqual(
-            parse_formula('ιx.Man(x)'),
-            Iota('x', Call(Var('Man'), Var('x')))
+            parse_formula('ιx.Man(x)'), Iota('x', Call(Var('Man'), Var('x')))
         )
 
 
@@ -295,18 +181,15 @@ class TypeParseTest(unittest.TestCase):
 
     def test_parsing_compound_type(self):
         self.assertTupleEqual(
-            parse_type('<e, t>'),
-            ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+            parse_type('<e, t>'), ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
         )
 
     def test_parsing_abbreviated_compound_types(self):
         self.assertTupleEqual(
-            parse_type('et'),
-            ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
+            parse_type('et'), ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
         )
         self.assertTupleEqual(
-            parse_type('vt'),
-            ComplexType(TYPE_EVENT, TYPE_TRUTH_VALUE)
+            parse_type('vt'), ComplexType(TYPE_EVENT, TYPE_TRUTH_VALUE)
         )
 
     def test_types_are_AtomicType_class(self):
@@ -321,11 +204,8 @@ class TypeParseTest(unittest.TestCase):
             parse_type('<<e, t>, <e, <s, t>>>'),
             ComplexType(
                 ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
-                ComplexType(
-                    TYPE_ENTITY,
-                    ComplexType(TYPE_WORLD, TYPE_TRUTH_VALUE)
-                )
-            )
+                ComplexType(TYPE_ENTITY, ComplexType(TYPE_WORLD, TYPE_TRUTH_VALUE)),
+            ),
         )
 
     def test_parsing_big_compound_type_with_abbreviations(self):
@@ -333,11 +213,8 @@ class TypeParseTest(unittest.TestCase):
             parse_type('<et, <e, st>>'),
             ComplexType(
                 ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
-                ComplexType(
-                    TYPE_ENTITY,
-                    ComplexType(TYPE_WORLD, TYPE_TRUTH_VALUE)
-                )
-            )
+                ComplexType(TYPE_ENTITY, ComplexType(TYPE_WORLD, TYPE_TRUTH_VALUE)),
+            ),
         )
 
 
