@@ -2,6 +2,7 @@
 __pycache__
 *.pyc
 *.pyo
+.venv
 
 # Script I use for quick testing
 /m
