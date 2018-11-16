@@ -11,7 +11,12 @@ TEST_LEXICON = {
         'good',
         Lambda('x', Call(Var('Good'), Var('x'))),
         ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
-    )
+    ),
+    'bad': SentenceNode(
+        'bad',
+        Lambda('x', Call(Var('Bad'), Var('x'))),
+        ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE),
+    ),
 }
 
 
@@ -35,6 +40,11 @@ def test_shell_command_switch_mode(shell_state):
     response = execute_command('!mode translate', shell_state)
     assert 'translate' in response
     assert shell_state.mode == 'translate'
+
+
+def test_shell_command_words(shell_state):
+    response = execute_command('!words', shell_state)
+    assert response == 'bad good'
 
 
 def test_shell_switch_to_unrecognized_mode(shell_state):

@@ -1,7 +1,7 @@
 """A natural-language understanding system.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: September 2018
+Version: November 2018
 """
 import json
 import os
@@ -48,6 +48,8 @@ def execute_command(command, shell_state):
         command = command[1:]
         if command == 'mode':
             return f'You are currently in {shell_state.mode} mode.'
+        elif command == 'words':
+            return ' '.join(sorted(shell_state.lexicon.keys(), key=str.lower))
         elif command.startswith('mode '):
             new_mode = command.split(maxsplit=1)[1]
             if new_mode in AVAILABLE_MODES:
@@ -77,11 +79,15 @@ HELP_MESSAGE = '''\
 Available commands:
     !mode          Display the current operating mode.
     !mode <mode>   Switch the operating mode.
+    !words         List all words in Montague's lexicon.
     !help          Display this help message.
     Ctrl+C         Exit the program.
 
 Available modes:
     translate      Translate English text into logic.
+
+
+Enter a sentence to see its translation!
 '''
 
 AVAILABLE_MODES = {'translate'}
