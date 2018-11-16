@@ -7,5 +7,7 @@ __pycache__
 /build
 /dist
 
+/*.txt
+
 # Script I use for quick testing
 /m

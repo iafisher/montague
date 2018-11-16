@@ -30,5 +30,7 @@ setup(
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
+        'Topic :: Text Processing :: Linguistic',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
 )
