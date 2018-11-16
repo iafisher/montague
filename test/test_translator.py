@@ -1,6 +1,7 @@
+import pytest
+
 import json
 import os
-import unittest
 
 from montague.ast import *
 from montague.parser import parse_formula, parse_type
@@ -42,149 +43,152 @@ TEST_LEXICON = {
 }
 
 
-class TranslatorTest(unittest.TestCase):
-    def test_is_good(self):
-        node = translate_sentence('is good', TEST_LEXICON)
-        self.assertEqual(node.text, 'is good')
-        self.assertTupleEqual(node.formula, Lambda('x', Call(Var('Good'), Var('x'))))
-        self.assertTupleEqual(node.type, TYPE_ET)
-
-    def test_john_is_good(self):
-        node = translate_sentence('John is good', TEST_LEXICON)
-        self.assertEqual(node.text, 'John is good')
-        self.assertTupleEqual(node.formula, Call(Var('Good'), Var('j')))
-        self.assertEqual(node.type, TYPE_TRUTH_VALUE)
-
-    def test_john_is_bad(self):
-        node = translate_sentence('John is bad', TEST_LEXICON)
-        self.assertEqual(node.text, 'John is bad')
-        self.assertTupleEqual(node.formula, Call(Var('Bad'), Var('j')))
-        self.assertEqual(node.type, TYPE_TRUTH_VALUE)
-
-    def test_every_child_is_good(self):
-        node = translate_sentence('every child is good', TEST_LEXICON)
-        self.assertEqual(node.text, 'every child is good')
-        self.assertTupleEqual(
-            node.formula,
-            ForAll(
-                'x', IfThen(Call(Var('Child'), Var('x')), Call(Var('Good'), Var('x')))
-            ),
-        )
-        self.assertEqual(node.type, TYPE_TRUTH_VALUE)
-
-    def test_the_child(self):
-        node = translate_sentence('the child', TEST_LEXICON)
-        self.assertEqual(node.text, 'the child')
-        self.assertTupleEqual(node.formula, Iota('x', Call(Var('Child'), Var('x'))))
-        self.assertEqual(node.type, TYPE_ENTITY)
-
-    def test_translate_invalid_sentence(self):
-        with self.assertRaises(TranslationError):
-            translate_sentence('every John is good', TEST_LEXICON)
-
-    def test_translate_unknown_word(self):
-        with self.assertRaisesRegex(TranslationError, r'.*whorlious.*'):
-            translate_sentence('John is whorlious', TEST_LEXICON)
+def test_translate_is_good():
+    node = translate_sentence('is good', TEST_LEXICON)
+    assert node.text == 'is good'
+    assert node.formula == Lambda('x', Call(Var('Good'), Var('x')))
+    assert node.type == TYPE_ET
 
 
-class CombinerTest(unittest.TestCase):
-    pred = SentenceNode('does', parse_formula('Lx.P(x)'), parse_type('<e, t>'))
-    entity = SentenceNode('me', Var('me'), TYPE_ENTITY)
-
-    def test_saturate_predicate(self):
-        self.assertTrue(can_combine(self.pred, self.entity))
-        node = combine(self.pred, self.entity)
-        self.assertEqual(node.text, 'does me')
-        self.assertTupleEqual(
-            node.formula, Call(self.pred.formula, self.entity.formula)
-        )
-        self.assertEqual(node.type, TYPE_TRUTH_VALUE)
-
-    def test_combine_every_child(self):
-        every = TEST_LEXICON['every']
-        child = TEST_LEXICON['child']
-        node = combine(every, child)
-        self.assertEqual(node.text, 'every child')
-        self.assertTupleEqual(node.formula, Call(every.formula, child.formula))
-        self.assertTupleEqual(node.type, ComplexType(TYPE_ET, TYPE_TRUTH_VALUE))
-
-    def test_can_combine_is_good(self):
-        self.assertTrue(can_combine(TEST_LEXICON['is'], TEST_LEXICON['good']))
-
-    def test_mismatched_types(self):
-        self.assertFalse(can_combine(self.pred, self.pred))
-        self.assertFalse(can_combine(self.entity, self.pred))
-        self.assertFalse(can_combine(self.entity, self.entity))
+def test_translate_john_is_good():
+    node = translate_sentence('John is good', TEST_LEXICON)
+    assert node.text == 'John is good'
+    assert node.formula == Call(Var('Good'), Var('j'))
+    assert node.type == TYPE_TRUTH_VALUE
 
 
-class SimplifierTest(unittest.TestCase):
-    def test_simplify_call(self):
-        tree = Call(Lambda('x', Var('x')), Var('j'))
-        self.assertTupleEqual(tree.simplify(), Var('j'))
-
-    def test_simplify_nested_call(self):
-        # (Lx.Ly.x & y)(a)(b) -> a & b
-        tree = Call(
-            Call(Lambda('x', Lambda('y', And(Var('x'), Var('y')))), Var('a')), Var('b')
-        )
-        self.assertTupleEqual(tree.simplify(), And(Var('a'), Var('b')))
-
-    def test_simplify_call_with_lambda_arg(self):
-        # (LP.P(x))(Lx.x | a) -> x | a
-        tree = Call(
-            Lambda('P', Call(Var('P'), Var('x'))), Lambda('x', Or(Var('x'), Var('a')))
-        )
-        self.assertTupleEqual(tree.simplify(), Or(Var('x'), Var('a')))
-
-    def test_simplify_super_nested_call(self):
-        # (LP.P(a, b))(Lx.Ly.x & y) -> a & b
-        tree = Call(
-            Lambda('P', Call(Call(Var('P'), Var('a')), Var('b'))),
-            Lambda('x', Lambda('y', And(Var('x'), Var('y')))),
-        )
-        self.assertTupleEqual(tree.simplify(), And(Var('a'), Var('b')))
-
-    def test_simplify_every_child(self):
-        # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
-        tree = Call(TEST_LEXICON['every'].formula, TEST_LEXICON['child'].formula)
-        self.assertTupleEqual(
-            tree.simplify(),
-            Lambda(
-                'Q',
-                ForAll(
-                    'x', IfThen(Call(Var('Child'), Var('x')), Call(Var('Q'), Var('x')))
-                ),
-            ),
-        )
+def test_translate_john_is_bad():
+    node = translate_sentence('John is bad', TEST_LEXICON)
+    assert node.text == 'John is bad'
+    assert node.formula == Call(Var('Bad'), Var('j'))
+    assert node.type == TYPE_TRUTH_VALUE
 
 
-class LexiconLoaderTest(unittest.TestCase):
-    def test_load_lexicon(self):
-        lexicon = load_lexicon(
-            {'John': {'d': 'j', 't': 'e'}, 'good': {'d': 'Lx.Good(x)', 't': 'et'}}
-        )
-        self.assertDictEqual(
-            lexicon,
-            {
-                'John': SentenceNode('John', parse_formula('j'), parse_type('e')),
-                'good': SentenceNode(
-                    'good', parse_formula('Lx.Good(x)'), parse_type('et')
-                ),
-            },
-        )
+def test_translate_every_child_is_good():
+    node = translate_sentence('every child is good', TEST_LEXICON)
+    assert node.text == 'every child is good'
+    assert node.formula == ForAll(
+        'x', IfThen(Call(Var('Child'), Var('x')), Call(Var('Good'), Var('x')))
+    )
+    assert node.type == TYPE_TRUTH_VALUE
 
-    def test_missing_denotation_field(self):
-        with self.assertRaisesRegex(LexiconError, r'.*John.*'):
-            load_lexicon({'John': {'t': 'e'}})
 
-    def test_missing_type_field(self):
-        with self.assertRaisesRegex(LexiconError, r'.*John.*'):
-            load_lexicon({'John': {'d': 'j'}})
+def test_translate_the_child():
+    node = translate_sentence('the child', TEST_LEXICON)
+    assert node.text == 'the child'
+    assert node.formula == Iota('x', Call(Var('Child'), Var('x')))
+    assert node.type == TYPE_ENTITY
 
-    def test_invalid_denotation_formula(self):
-        with self.assertRaisesRegex(LexiconError, r'.*John.*'):
-            load_lexicon({'John': {'d': '???', 't': 'e'}})
 
-    def test_invalid_type(self):
-        with self.assertRaisesRegex(LexiconError, r'.*John.*'):
-            load_lexicon({'John': {'d': 'j', 't': '???'}})
+def test_translate_invalid_sentence():
+    with pytest.raises(TranslationError):
+        translate_sentence('every John is good', TEST_LEXICON)
+
+
+def test_translate_unknown_word():
+    with pytest.raises(TranslationError) as e:
+        translate_sentence('John is whorlious', TEST_LEXICON)
+    assert 'whorlious' in str(e)
+
+
+pred = SentenceNode('does', parse_formula('Lx.P(x)'), parse_type('<e, t>'))
+entity = SentenceNode('me', Var('me'), TYPE_ENTITY)
+
+
+def test_combine_to_saturate_predicate():
+    assert can_combine(pred, entity)
+    node = combine(pred, entity)
+    assert node.text == 'does me'
+    assert node.formula == Call(pred.formula, entity.formula)
+    assert node.type == TYPE_TRUTH_VALUE
+
+
+def test_combine_every_child():
+    every = TEST_LEXICON['every']
+    child = TEST_LEXICON['child']
+    node = combine(every, child)
+    assert node.text == 'every child'
+    assert node.formula == Call(every.formula, child.formula)
+    assert node.type == ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)
+
+
+def test_can_combine_is_good():
+    assert can_combine(TEST_LEXICON['is'], TEST_LEXICON['good'])
+
+
+def test_cannot_combine_mismatched_types():
+    assert not can_combine(pred, pred)
+    assert not can_combine(entity, pred)
+    assert not can_combine(entity, entity)
+
+
+def test_simplify_call():
+    tree = Call(Lambda('x', Var('x')), Var('j'))
+    assert tree.simplify() == Var('j')
+
+
+def test_simplify_nested_call():
+    # (Lx.Ly.x & y)(a)(b) -> a & b
+    tree = Call(
+        Call(Lambda('x', Lambda('y', And(Var('x'), Var('y')))), Var('a')), Var('b')
+    )
+    assert tree.simplify() == And(Var('a'), Var('b'))
+
+
+def test_simplify_call_with_lambda_arg():
+    # (LP.P(x))(Lx.x | a) -> x | a
+    tree = Call(
+        Lambda('P', Call(Var('P'), Var('x'))), Lambda('x', Or(Var('x'), Var('a')))
+    )
+    assert tree.simplify() == Or(Var('x'), Var('a'))
+
+
+def test_simplify_super_nested_call():
+    # (LP.P(a, b))(Lx.Ly.x & y) -> a & b
+    tree = Call(
+        Lambda('P', Call(Call(Var('P'), Var('a')), Var('b'))),
+        Lambda('x', Lambda('y', And(Var('x'), Var('y')))),
+    )
+    assert tree.simplify() == And(Var('a'), Var('b'))
+
+
+def test_simplify_every_child():
+    # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
+    tree = Call(TEST_LEXICON['every'].formula, TEST_LEXICON['child'].formula)
+    assert tree.simplify() == Lambda(
+        'Q', ForAll('x', IfThen(Call(Var('Child'), Var('x')), Call(Var('Q'), Var('x'))))
+    )
+
+
+def test_load_lexicon():
+    lexicon = load_lexicon(
+        {'John': {'d': 'j', 't': 'e'}, 'good': {'d': 'Lx.Good(x)', 't': 'et'}}
+    )
+    assert lexicon == {
+        'John': SentenceNode('John', parse_formula('j'), parse_type('e')),
+        'good': SentenceNode('good', parse_formula('Lx.Good(x)'), parse_type('et')),
+    }
+
+
+def test_load_lexicon_missing_denotation_field():
+    with pytest.raises(LexiconError) as e:
+        load_lexicon({'John': {'t': 'e'}})
+    assert 'John' in str(e)
+
+
+def test_load_lexicon_with_missing_type_field():
+    with pytest.raises(LexiconError) as e:
+        load_lexicon({'John': {'d': 'j'}})
+    assert 'John' in str(e)
+
+
+def test_load_lexicon_with_invalid_denotation_formula():
+    with pytest.raises(LexiconError) as e:
+        load_lexicon({'John': {'d': '???', 't': 'e'}})
+    assert 'John' in str(e)
+
+
+def test_load_lexicon_with_invalid_type():
+    with pytest.raises(LexiconError) as e:
+        load_lexicon({'John': {'d': 'j', 't': '???'}})
+    assert 'John' in str(e)
