@@ -1,4 +1,7 @@
 # Montague
+
+[![Build Status](https://travis-ci.com/iafisher/montague.png)](https://travis-ci.com/iafisher/montague)
+
 A natural-language understanding system.
 
 Montague differs from most NLU systems in that is uses formal semantics rather than machine learning to interpret English sentences.
