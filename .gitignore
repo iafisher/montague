@@ -3,6 +3,7 @@ __pycache__
 *.pyc
 *.pyo
 .venv
+*.egg-info
 
 # Script I use for quick testing
 /m

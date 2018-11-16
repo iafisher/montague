@@ -1,0 +1,34 @@
+from setuptools import find_packages, setup
+
+
+with open('README.txt', 'r') as f:
+    long_description = f.read()
+
+
+setup(
+    name='montague-nlu',
+    version='0.1.0',
+    description='Natural language understanding system',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    license='MIT',
+    author='Ian Fisher',
+    author_email='iafisher@protonmail.com',
+    entry_points={
+        'console_scripts': [
+            'montague = montague.montague:run_shell',
+        ],
+    },
+    packages=find_packages(exclude=['tests']),
+    install_requires=[
+        'lark-parser==0.6.4',
+    ],
+    project_urls={
+        'Source': 'https://github.com/iafisher/montague',
+    },
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: MIT License',
+        'Natural Language :: English',
+    ],
+)
