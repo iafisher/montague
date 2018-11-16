@@ -39,11 +39,12 @@ def run_shell():
             break
 
         response = execute_command(command, shell_state)
-        print(response)
+        if response is not None:
+            print(response)
 
 
 def execute_command(command, shell_state):
-    command = command.rstrip()
+    command = command.strip()
     if command.startswith('!'):
         command = command[1:]
         if command == 'mode':
@@ -65,7 +66,7 @@ def execute_command(command, shell_state):
             return HELP_MESSAGE + f'\nYou are currently in {shell_state.mode} mode.'
         else:
             return f'Unrecognized command {command}.'
-    else:
+    elif command:
         try:
             entry = translate_sentence(command, shell_state.lexicon)
         # TODO: Only catch montague errors
