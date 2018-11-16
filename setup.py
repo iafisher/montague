@@ -7,7 +7,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='montague-nlu',
-    version='0.1.3',
+    version='0.1.4',
     description='Natural language understanding system',
     long_description=long_description,
     long_description_content_type='text/markdown',

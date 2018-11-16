@@ -20,7 +20,7 @@ class ShellState:
 
 
 def run_shell():
-    print('The Montague natural language system (v0.1.3).\n')
+    print('The Montague natural language system (v0.1.4).\n')
     print(HELP_MESSAGE)
 
     try:
@@ -96,7 +96,7 @@ AVAILABLE_MODES = {'translate'}
 AVAILABLE_MODES_STR = ', '.join(AVAILABLE_MODES)
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-FRAGMENT_PATH = os.path.join(PROJECT_DIR, 'resources', 'fragment.json')
+FRAGMENT_PATH = os.path.join(PROJECT_DIR, 'montague', 'resources', 'fragment.json')
 
 
 if __name__ == '__main__':
