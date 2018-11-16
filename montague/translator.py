@@ -19,7 +19,7 @@ def translate_sentence(sentence, lexicon):
     try:
         terms = [lexicon[word] for word in sentence.split()]
     except KeyError as e:
-        raise TranslationError(f'Could not translate the word {e}')
+        raise TranslationError('Could not translate the word {}'.format(e))
 
     previous = len(terms)
     while len(terms) > 1:
@@ -40,7 +40,8 @@ def translate_sentence(sentence, lexicon):
                 'Could not translate the sentence: '
                 + 'no way to merge '
                 + ', '.join(
-                    f'[{term.text} ({term.type.concise_str()})]' for term in terms
+                    '[{} ({})]'.format(term.text, term.type.concise_str())
+                    for term in terms
                 )
             )
         previous = len(terms)
@@ -88,15 +89,15 @@ def load_lexical_entry(key, value):
     try:
         denotation = parse_formula(value['d'])
     except KeyError:
-        raise LexiconError(f'entry for {key} has no "d" field')
+        raise LexiconError('entry for {} has no "d" field'.format(key))
     except ParseError as e:
-        raise LexiconError(f'could not parse denotation of {key} ({e})')
+        raise LexiconError('could not parse denotation of {} ({})'.format(key, e))
 
     try:
         type_ = parse_type(value['t'])
     except KeyError:
-        raise LexiconError(f'entry for {key} has no "t" field')
+        raise LexiconError('entry for {} has no "t" field'.format(key))
     except ParseError as e:
-        raise LexiconError(f'could not parse type of {key} ({e})')
+        raise LexiconError('could not parse type of {} ({})'.format(key, e))
 
     return SentenceNode(key, denotation, type_)

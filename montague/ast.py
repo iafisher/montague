@@ -63,7 +63,7 @@ class And(Formula, namedtuple('And', ['left', 'right'])):
         # wrapb applies brackets if needed for the proper precedence.
         left = wrapb(self, self.left)
         right = wrapb(self, self.right)
-        return f'{left} & {right}'
+        return left + ' & ' + right
 
 
 class Or(Formula, namedtuple('Or', ['left', 'right'])):
@@ -72,7 +72,7 @@ class Or(Formula, namedtuple('Or', ['left', 'right'])):
     def __str__(self):
         left = wrapb(self, self.left)
         right = wrapb(self, self.right)
-        return f'{left} | {right}'
+        return left + ' | ' + right
 
 
 class IfThen(Formula, namedtuple('IfThen', ['left', 'right'])):
@@ -81,7 +81,7 @@ class IfThen(Formula, namedtuple('IfThen', ['left', 'right'])):
     def __str__(self):
         left = wrapb(self, self.left)
         right = wrapb(self, self.right)
-        return f'{left} -> {right}'
+        return left + ' -> ' + right
 
 
 class IfAndOnlyIf(Formula, namedtuple('IfAndOnlyIf', ['left', 'right'])):
@@ -90,7 +90,7 @@ class IfAndOnlyIf(Formula, namedtuple('IfAndOnlyIf', ['left', 'right'])):
     def __str__(self):
         left = wrapb(self, self.left)
         right = wrapb(self, self.right)
-        return f'{left} <-> {right}'
+        return left + ' <-> ' + right
 
 
 class Not(Formula, namedtuple('Not', ['operand'])):
@@ -98,17 +98,17 @@ class Not(Formula, namedtuple('Not', ['operand'])):
 
     def __str__(self):
         operand = wrapb(self, self.operand)
-        return f'~{operand}'
+        return '~' + operand
 
 
 class Lambda(Formula, namedtuple('Lambda', ['parameter', 'body'])):
     prec = 5
 
     def __str__(self):
-        return f'λ{self.parameter}.{self.body}'
+        return 'λ{0.parameter}.{0.body}'.format(self)
 
     def ascii_str(self):
-        return f'L{self.parameter}.{self.body}'
+        return 'L{0.parameter}.{0.body}'.format(self)
 
     def replace_variable(self, variable, replacement):
         if variable != self.parameter:
@@ -133,11 +133,11 @@ class Call(Formula, namedtuple('Call', ['caller', 'arg'])):
             func = func.caller
         args = ', '.join(reversed(args))
         if isinstance(func, Var):
-            return f'{func}({args})'
+            return '{}({})'.format(func, args)
         else:
             # Syntactically, a non-constant function must be in parentheses in
             # a call expression.
-            return f'({func})({args})'
+            return '({})({})'.format(func, args)
 
     def simplify(self):
         caller = self.caller.simplify()
@@ -152,10 +152,10 @@ class ForAll(Formula, namedtuple('ForAll', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
-        return f'∀ {self.symbol}.{self.body}'
+        return '∀ {0.symbol}.{0.body}'.format(self)
 
     def ascii_str(self):
-        return f'A{self.symbol}.{self.body}'
+        return 'A{0.symbol}.{0.body}'.format(self)
 
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
@@ -170,10 +170,10 @@ class Exists(Formula, namedtuple('Exists', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
-        return f'∃ {self.symbol}.{self.body}'
+        return '∃ {0.symbol}.{0.body}'.format(self)
 
     def ascii_str(self):
-        return f'E{self.symbol}.{self.body}'
+        return 'E{0.symbol}.{0.body}'.format(self)
 
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
@@ -188,11 +188,11 @@ class Iota(Formula, namedtuple('Iota', ['symbol', 'body'])):
     prec = 5
 
     def __str__(self):
-        return f'ι{self.symbol}.{self.body}'
+        return 'ι{0.symbol}.{0.body}'.format(self)
 
     def ascii_str(self):
         # 'i' instead of 'ι'
-        return f'i{self.symbol}.{self.body}'
+        return 'i{0.symbol}.{0.body}'.format(self)
 
     def replace_variable(self, variable, replacement):
         if variable != self.symbol:
@@ -206,7 +206,7 @@ class Iota(Formula, namedtuple('Iota', ['symbol', 'body'])):
 
 class ComplexType(namedtuple('ComplexType', ['left', 'right'])):
     def __str__(self):
-        return f'<{self.left}, {self.right}>'
+        return '<{0.left}, {0.right}>'.format(self)
 
     def concise_str(self):
         """Convert the type to a string, recursively abbreviating '<x, y>' as
@@ -219,9 +219,9 @@ class ComplexType(namedtuple('ComplexType', ['left', 'right'])):
            'et'
         """
         if isinstance(self.left, AtomicType) and isinstance(self.right, AtomicType):
-            return f'{self.left}{self.right}'
+            return '{0.left}{0.right}'.format(self)
         else:
-            return f'<{self.left.concise_str()}, {self.right.concise_str()}>'
+            return '<{}, {}>'.format(self.left.concise_str(), self.right.concise_str())
 
 
 class AtomicType(str):
@@ -246,6 +246,6 @@ def wrapb(parent, child):
     is higher than the parent node.
     """
     if child.prec > parent.prec:
-        return f'[{child}]'
+        return '[{}]'.format(child)
     else:
         return str(child)

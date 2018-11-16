@@ -27,7 +27,7 @@ def run_shell():
         with open(FRAGMENT_PATH) as f:
             lexicon = load_lexicon(json.load(f))
     except (FileNotFoundError, IOError):
-        sys.stderr.write(f'Error: failed to open {FRAGMENT_PATH}\n')
+        sys.stderr.write('Error: failed to open {}\n'.format(FRAGMENT_PATH))
         sys.exit(1)
 
     shell_state = ShellState(lexicon=lexicon)
@@ -48,32 +48,33 @@ def execute_command(command, shell_state):
     if command.startswith('!'):
         command = command[1:]
         if command == 'mode':
-            return f'You are currently in {shell_state.mode} mode.'
+            return 'You are currently in {} mode.'.format(shell_state.mode)
         elif command == 'words':
             return ' '.join(sorted(shell_state.lexicon.keys(), key=str.lower))
         elif command.startswith('mode '):
             new_mode = command.split(maxsplit=1)[1]
             if new_mode in AVAILABLE_MODES:
                 shell_state.mode = new_mode
-                return f'Switched to {new_mode} mode.'
+                return 'Switched to {} mode.'.format(new_mode)
             else:
                 return (
-                    f'{new_mode} is not a recognized mode. '
-                    + f'Available modes are: {AVAILABLE_MODES_STR}.\n'
-                    + f'Remaining in {shell_state.mode} mode.'
-                )
+                    '{} is not a recognized mode. Available modes are: {}.\n'
+                    + 'Remaining in {} mode.'
+                ).format(new_mode, AVAILABLE_MODES_STR, shell_state.mode)
         elif command == 'help':
-            return HELP_MESSAGE + f'\nYou are currently in {shell_state.mode} mode.'
+            return HELP_MESSAGE + '\nYou are currently in {} mode.'.format(
+                shell_state.mode
+            )
         else:
-            return f'Unrecognized command {command}.'
+            return 'Unrecognized command {}.'.format(command)
     elif command:
         try:
             entry = translate_sentence(command, shell_state.lexicon)
         # TODO: Only catch montague errors
         except Exception as e:
-            return f'Error: {e}'
+            return 'Error: {}'.format(e)
         else:
-            return f'Denotation: {entry.formula}\nType: {entry.type}'
+            return 'Denotation: {0.formula}\nType: {0.type}'.format(entry)
 
 
 HELP_MESSAGE = '''\
