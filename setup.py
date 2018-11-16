@@ -16,7 +16,7 @@ setup(
     author_email='iafisher@protonmail.com',
     entry_points={
         'console_scripts': [
-            'montague = montague.montague:run_shell',
+            'montague = montague.main:main',
         ],
     },
     packages=find_packages(exclude=['tests']),

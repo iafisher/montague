@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 
 from montague.ast import *
-from montague.montague import ShellState, execute_command, HELP_MESSAGE
+from montague.main import ShellState, execute_command, HELP_MESSAGE
 from montague.translator import TranslationError
 
 
@@ -55,7 +55,7 @@ def test_shell_switch_to_unrecognized_mode(shell_state):
 
 
 def test_shell_display_formula(shell_state):
-    with patch('montague.montague.translate_sentence') as mock_translate_sentence:
+    with patch('montague.main.translate_sentence') as mock_translate_sentence:
         mock_translate_sentence.return_value = SentenceNode(
             'good', Call(Var('Good'), Var('j')), TYPE_TRUTH_VALUE
         )

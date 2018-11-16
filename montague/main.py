@@ -1,4 +1,4 @@
-"""A natural-language understanding system.
+"""The command-line interface to the Montague natural language understanding system.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: November 2018
@@ -19,7 +19,7 @@ class ShellState:
         self.lexicon = lexicon
 
 
-def run_shell():
+def main():
     print('The Montague natural language system (v0.1.4).\n')
     print(HELP_MESSAGE)
 
@@ -97,7 +97,3 @@ AVAILABLE_MODES_STR = ', '.join(AVAILABLE_MODES)
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 FRAGMENT_PATH = os.path.join(PROJECT_DIR, 'montague', 'resources', 'fragment.json')
-
-
-if __name__ == '__main__':
-    run_shell()
