@@ -7,7 +7,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='montague-nlu',
-    version='0.1.1',
+    version='0.1.3',
     description='Natural language understanding system',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -20,6 +20,7 @@ setup(
         ],
     },
     packages=find_packages(exclude=['tests']),
+    package_data={'montague': ['resources/*json']},
     install_requires=[
         'lark-parser==0.6.4',
     ],
