@@ -7,10 +7,10 @@ with open('README.md', 'r') as f:
 
 setup(
     name='montague-nlu',
-    version='0.1.5',
+    version='0.1.6',
     description='Natural language understanding system',
     long_description=long_description,
-    #long_description_content_type='text/markdown',
+    long_description_content_type='text/markdown',
     license='MIT',
     author='Ian Fisher',
     author_email='iafisher@protonmail.com',
