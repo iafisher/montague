@@ -1,6 +1,7 @@
 # Montague
 
 [![Build Status](https://travis-ci.com/iafisher/montague.png)](https://travis-ci.com/iafisher/montague)
+[![PyPI](https://img.shields.io/pypi/v/montague-nlu.svg?label=version)](https://pypi.org/project/montague-nlu/)
 
 An experimental natural-language understanding system.
 
