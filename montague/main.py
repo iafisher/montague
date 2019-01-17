@@ -20,7 +20,7 @@ class ShellState:
 
 
 def main():
-    print('The Montague natural language system (v0.1.4).\n')
+    print('The Montague natural language system (v0.1.5).\n')
     print(HELP_MESSAGE)
 
     try:
