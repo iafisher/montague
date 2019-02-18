@@ -21,7 +21,7 @@ $ git clone https://github.com/iafisher/montague.git
 $ python3 setup.py develop --user
 ```
 
-Once you do so, you can play with Montague's command-line interface:
+Once Montague is installed, you can play with its command-line interface:
 
 ```shell
 $ montague
