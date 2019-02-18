@@ -4,12 +4,10 @@ expressions.
 Author:  Ian Fisher (iafisher@protonmail.com)
 Version: September 2018
 """
-from collections import namedtuple
-
 from lark import Lark, Transformer
 from lark.exceptions import LarkError
 
-from .ast import *
+from . import ast
 from .exceptions import ParseError
 
 
@@ -17,50 +15,50 @@ class TreeToFormula(Transformer):
     """Transform Lark's parse tree into a formula tree with Formula objects."""
 
     def expr(self, matches):
-        if matches[1] == '->':
-            return IfThen(matches[0], matches[2])
-        elif matches[1] == '<->':
-            return IfAndOnlyIf(matches[0], matches[2])
+        if matches[1] == "->":
+            return ast.IfThen(matches[0], matches[2])
+        elif matches[1] == "<->":
+            return ast.IfAndOnlyIf(matches[0], matches[2])
         else:
             raise NotImplementedError
 
     def ifterm(self, matches):
-        return Or(matches[0], matches[2])
+        return ast.Or(matches[0], matches[2])
 
     def term(self, matches):
-        return And(matches[0], matches[2])
+        return ast.And(matches[0], matches[2])
 
     def variable(self, matches):
-        return Var(matches[0])
+        return ast.Var(matches[0])
 
     def lambda_(self, matches):
-        return Lambda(matches[1], matches[2])
+        return ast.Lambda(matches[1], matches[2])
 
     def forall(self, matches):
-        return ForAll(matches[1], matches[2])
+        return ast.ForAll(matches[1], matches[2])
 
     def exists(self, matches):
-        return Exists(matches[1], matches[2])
+        return ast.Exists(matches[1], matches[2])
 
     def call(self, matches):
-        # The parse tree allows n-ary functions but the AST only allows unary
-        # functions. This methods converts the former to the latter, e.g.
-        # F(x, y, z) becomes F(x)(y)(z), three nested CallNodes.
-        func = Call(matches[0], matches[1])
+        # The parse tree allows n-ary functions but the AST only allows unary functions.
+        # This methods converts the former to the latter, e.g. F(x, y, z) becomes
+        # F(x)(y)(z), three nested CallNodes.
+        func = ast.Call(matches[0], matches[1])
         for i in range(2, len(matches)):
-            func = Call(func, matches[i])
+            func = ast.Call(func, matches[i])
         return func
 
     def iota(self, matches):
-        return Iota(matches[1], matches[2])
+        return ast.Iota(matches[1], matches[2])
 
     def not_e(self, matches):
-        return Not(matches[1])
+        return ast.Not(matches[1])
 
 
 # The grammar of the logical language.
 formula_parser = Lark(
-    '''
+    """
     ?start: expr
 
     ?expr: ifterm | ifterm IMPLIES expr | ifterm IFF expr
@@ -100,8 +98,8 @@ formula_parser = Lark(
 
     %import common.WS
     %ignore WS
-''',
-    parser='lalr',
+""",
+    parser="lalr",
     transformer=TreeToFormula(),
 )
 
@@ -118,25 +116,27 @@ def parse_formula(formula):
 
 
 class TreeToType(Transformer):
-    """Transform Lark's parse tree into a type tree with ComplexType and
-    AtomicType objects.
+    """Transform Lark's parse tree into a type tree with ComplexType and AtomicType
+    objects.
     """
 
     def type(self, matches):
         if len(matches) == 2:
-            return ComplexType(matches[0], matches[1])
+            return ast.ComplexType(matches[0], matches[1])
         elif len(matches) == 1:
             if len(matches[0]) == 2:
-                return ComplexType(AtomicType(matches[0][0]), AtomicType(matches[0][1]))
+                return ast.ComplexType(
+                    ast.AtomicType(matches[0][0]), ast.AtomicType(matches[0][1])
+                )
             else:
-                return AtomicType(matches[0])
+                return ast.AtomicType(matches[0])
         else:
             raise NotImplementedError
 
 
 # The grammar of the type mini-language.
 type_parser = Lark(
-    '''
+    """
     ?start: type
 
     type: "<" type "," type ">"
@@ -144,8 +144,8 @@ type_parser = Lark(
 
     %import common.WS
     %ignore WS
-''',
-    parser='lalr',
+""",
+    parser="lalr",
     transformer=TreeToType(),
 )
 
