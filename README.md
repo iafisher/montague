@@ -7,28 +7,23 @@ An experimental natural-language understanding system.
 
 Unlike conventional, machine-learning NLU systems, Montague uses formal semantics to interpret English sentences.
 
-When Montague reads a sentence, it looks up each word in its lexicon to assign it a meaning in its logical language (an extension of first-order logic). Then, it recursively combines the words into phrases and computes the meaning of each phrase. When the sentence has been translated into a logical formula, Montague evaluates the formula against its model of the world to determine its truth value.
+When Montague reads a sentence, it looks up each word in its lexicon to assign it a meaning in its logical language (an extension of first-order logic). Then, it recursively combines the words into phrases and computes the meaning of each phrase. When the sentence has been translated into a logical formula, Montague evaluates the formula against its "world model" (the set of facts it knows about the universe) to determine its truth value.
 
 ## Installation
+You can install Montague with pip:
+
 ```shell
 $ pip3 install montague-nlu
 ```
 
-Alternatively, you can install a development version with `setup.py`:
-
-```shell
-$ git clone https://github.com/iafisher/montague.git
-$ python3 setup.py develop --user
-```
-
-Once Montague is installed, you can play with its command-line interface:
+Once installed, you can invoke Montague's interactive command-line interface:
 
 ```shell
 $ montague
 ```
 
 ## Limitations
-The Montague system is still in early beta and suffers from many limitations.
+As it is still in early beta, the Montague system has some limitations.
 
 - Montague has no knowledge of syntax. Its only criterion for grouping two phrases is whether they are linearly adjacent and whether their types are compatible. This leads Montague to interpret nonsense sentences like "Every good is child."
 - Montague will fail to interpret a sentence if it contains a word that is not in its lexicon.
