@@ -38,14 +38,14 @@ def test_translate_is_good(lexicon):
 def test_translate_john_is_good(lexicon):
     node = translate_sentence("John is good", lexicon)
     assert node.text == "John is good"
-    assert node.formula == Call(Var("Good"), Var("j"))
+    assert node.formula == Call(Var("Good"), Var("john"))
     assert node.type == TYPE_TRUTH_VALUE
 
 
 def test_translate_john_is_bad(lexicon):
     node = translate_sentence("John is bad", lexicon)
     assert node.text == "John is bad"
-    assert node.formula == Call(Var("Bad"), Var("j"))
+    assert node.formula == Call(Var("Bad"), Var("john"))
     assert node.type == TYPE_TRUTH_VALUE
 
 
@@ -78,10 +78,17 @@ def test_translate_unknown_word(lexicon):
     assert node.type == TYPE_ET
 
 
+def test_translate_unknown_proper_noun(lexicon):
+    node = translate_sentence("Mikhail", lexicon)
+    assert node.text == "Mikhail"
+    assert node.formula == Var("mikhail")
+    assert node.type == TYPE_ENTITY
+
+
 def test_translate_unknown_word_in_sentence(lexicon):
     node = translate_sentence("John is whorlious", lexicon)
     assert node.text == "John is whorlious"
-    assert node.formula == Call(Var("Whorlious"), Var("j"))
+    assert node.formula == Call(Var("Whorlious"), Var("john"))
     assert node.type == TYPE_TRUTH_VALUE
 
 

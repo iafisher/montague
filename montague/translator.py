@@ -98,6 +98,9 @@ def load_lexical_entry(key, value):
 
 def default_for_unknown(word):
     """Provide a default definition for words that are not in the lexicon."""
-    formula = ast.Lambda("x", ast.Call(ast.Var(word.title()), ast.Var("x")))
-    type_et = ast.ComplexType(ast.TYPE_ENTITY, ast.TYPE_TRUTH_VALUE)
-    return ast.SentenceNode(word, formula, type_et)
+    if word[0].isupper():
+        return ast.SentenceNode(word, ast.Var(word.lower()), ast.TYPE_ENTITY)
+    else:
+        formula = ast.Lambda("x", ast.Call(ast.Var(word.title()), ast.Var("x")))
+        type_et = ast.ComplexType(ast.TYPE_ENTITY, ast.TYPE_TRUTH_VALUE)
+        return ast.SentenceNode(word, formula, type_et)

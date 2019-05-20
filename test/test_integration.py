@@ -9,8 +9,8 @@ Mary = object()
 test_model = WorldModel(
     set([John, Mary]),
     {
-        "j": John,
-        "m": Mary,
+        "john": John,
+        "mary": Mary,
         "Good": {John},
         "Bad": {Mary},
         "Man": {John},
