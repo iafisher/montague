@@ -21,10 +21,14 @@ test_model = WorldModel(
 
 
 def test_john_is_good_is_true(lexicon):
-    node = translate_sentence("John is good", lexicon)
-    assert interpret_formula(node.formula, test_model)
+    nodes = translate_sentence("John is good", lexicon)
+
+    assert len(nodes) == 1
+    assert interpret_formula(nodes[0].formula, test_model)
 
 
 def test_john_is_bad_is_false(lexicon):
-    node = translate_sentence("John is bad", lexicon)
-    assert not interpret_formula(node.formula, test_model)
+    nodes = translate_sentence("John is bad", lexicon)
+
+    assert len(nodes) == 1
+    assert not interpret_formula(nodes[0].formula, test_model)

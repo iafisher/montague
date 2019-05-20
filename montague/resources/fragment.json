@@ -1,46 +1,46 @@
 {
-  "bad": {
+  "bad": [{
     "d": "Lx.Bad(x)",
     "t": "et"
-  },
-  "is": {
+  }],
+  "is": [{
     "d": "LP.P",
     "t": "<et, et>"
-  },
-  "good": {
+  }],
+  "good": [{
     "d": "Lx.Good(x)",
     "t": "et"
-  },
-  "every": {
+  }],
+  "every": [{
     "d": "LP.LQ.Ax.P(x) -> Q(x)",
     "t": "<et, <et, t>>"
-  },
-  "child": {
+  }],
+  "child": [{
     "d": "Lx.Child(x)",
     "t": "et"
-  },
-  "a": {
+  }],
+  "a": [{
     "d": "LP.P",
     "t": "<et, et>"
-  },
-  "the": {
+  }],
+  "the": [{
     "d": "LP.ix.P(x)",
     "t": "<et, e>"
-  },
-  "not": {
+  }],
+  "not": [{
      "d": "LP.Lx.~P(x)",
      "t": "<et, et>"
-  },
-  "not2": {
+  }],
+  "not2": [{
      "d": "LS.~S",
      "t": "<t, t>"
-  },
-  "and": {
+  }],
+  "and": [{
      "d": "LR.LS.R & S",
      "t": "<t, <t, t>>"
-  },
-  "or": {
+  }],
+  "or": [{
      "d": "LR.LS.R | S",
      "t": "<t, <t, t>>"
-  }
+  }]
 }

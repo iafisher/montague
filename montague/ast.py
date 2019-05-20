@@ -235,7 +235,9 @@ TYPE_WORLD = AtomicType("s")
 
 # The class to represent English sentences as logical formulas. `text` is the
 # English text corresponding to the node.
-SentenceNode = namedtuple("SentenceNode", ["text", "formula", "type"])
+class SentenceNode(namedtuple("SentenceNode", ["text", "formula", "type"])):
+    def __repr__(self):
+        return f"SentenceNode({repr(self.text)}, {repr(str(self.formula))}, {repr(self.type.concise_str())})"
 
 
 def wrapb(parent, child):

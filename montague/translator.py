@@ -1,46 +1,59 @@
-"""Translation from English to the logical representation language.
+"""
+Translation from English to the logical representation language.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: September 2018
+Version: May 2019
 """
+import itertools
+from collections import OrderedDict
+
 from . import ast
-from .exceptions import CombinationError, LexiconError, ParseError, TranslationError
+from .exceptions import CombinationError, LexiconError, ParseError
 from .parser import parse_formula, parse_type
 
 
 def translate_sentence(sentence, lexicon):
-    """Translate `sentence`, a string containing English text, into a logical formula
+    """
+    Translate `sentence`, a string containing English text, into a logical formula
     which represents its truth conditions.
-
-    If the sentence cannot be translated, a TranslationError is raised.
     """
     terms = [lexicon.get(word, default_for_unknown(word)) for word in sentence.split()]
+    all_possibilities = list(list(t) for t in itertools.product(*terms))
+    in_progress = []
+    finished = []
+    for p in all_possibilities:
+        if len(p) == 1:
+            finished.append(p[0])
+        else:
+            in_progress.append(p)
 
-    previous = len(terms)
-    while len(terms) > 1:
-        new_terms = []
-        i = 0
-        while i < len(terms) - 1:
-            try:
-                new_terms.append(combine(terms[i], terms[i + 1]))
-                i += 2
-            except CombinationError:
-                new_terms.append(terms[i])
-                i += 1
-        if i == len(terms) - 1:
-            new_terms.append(terms[i])
-        terms = new_terms
-        if len(terms) == previous:
-            raise TranslationError(
-                "Could not translate the sentence: no way to merge "
-                + ", ".join(
-                    "[{} ({})]".format(term.text, term.type.concise_str())
-                    for term in terms
-                )
-            )
-        previous = len(terms)
-    root = terms[0]._replace(formula=terms[0].formula.simplify())
-    return root
+    while in_progress:
+        new_in_progress = []
+        for terms in in_progress:
+            for new_terms in step(terms):
+                if len(new_terms) == 1:
+                    finished.append(new_terms[0])
+                else:
+                    new_in_progress.append(new_terms)
+        in_progress = new_in_progress
+
+    for i in range(len(finished)):
+        finished[i] = finished[i]._replace(formula=finished[i].formula.simplify())
+
+    # Weed out duplicate translations by using OrderedDict to simulate an ordered set.
+    return list(OrderedDict.fromkeys(finished).keys())
+
+
+def step(terms):
+    stepped_terms = []
+    for i in range(len(terms) - 1):
+        try:
+            combined = combine(terms[i], terms[i + 1])
+        except CombinationError:
+            pass
+        else:
+            stepped_terms.append(terms[:i] + [combined] + terms[i + 2 :])
+    return stepped_terms
 
 
 def combine(term1, term2):
@@ -78,29 +91,47 @@ def load_lexicon(lexicon_json):
     return {k: load_lexical_entry(k, v) for k, v in lexicon_json.items()}
 
 
-def load_lexical_entry(key, value):
-    try:
-        denotation = parse_formula(value["d"])
-    except KeyError:
-        raise LexiconError('entry for {} has no "d" field'.format(key))
-    except ParseError as e:
-        raise LexiconError("could not parse denotation of {} ({})".format(key, e))
+def load_lexical_entry(key, values):
+    trees = []
+    for value in values:
+        try:
+            denotation = parse_formula(value["d"])
+        except KeyError:
+            raise LexiconError('entry for {} has no "d" field'.format(key))
+        except ParseError as e:
+            raise LexiconError("could not parse denotation of {} ({})".format(key, e))
 
-    try:
-        type_ = parse_type(value["t"])
-    except KeyError:
-        raise LexiconError('entry for {} has no "t" field'.format(key))
-    except ParseError as e:
-        raise LexiconError("could not parse type of {} ({})".format(key, e))
+        try:
+            type_ = parse_type(value["t"])
+        except KeyError:
+            raise LexiconError('entry for {} has no "t" field'.format(key))
+        except ParseError as e:
+            raise LexiconError("could not parse type of {} ({})".format(key, e))
 
-    return ast.SentenceNode(key, denotation, type_)
+        trees.append(ast.SentenceNode(key, denotation, type_))
+
+    return trees
 
 
 def default_for_unknown(word):
     """Provide a default definition for words that are not in the lexicon."""
-    if word[0].isupper():
-        return ast.SentenceNode(word, ast.Var(word.lower()), ast.TYPE_ENTITY)
-    else:
-        formula = ast.Lambda("x", ast.Call(ast.Var(word.title()), ast.Var("x")))
-        type_et = ast.ComplexType(ast.TYPE_ENTITY, ast.TYPE_TRUTH_VALUE)
-        return ast.SentenceNode(word, formula, type_et)
+    proper_noun = ast.SentenceNode(word, ast.Var(word.lower()), ast.TYPE_ENTITY)
+    single_place = ast.SentenceNode(
+        word,
+        ast.Lambda("x", ast.Call(ast.Var(word.title()), ast.Var("x"))),
+        ast.ComplexType(ast.TYPE_ENTITY, ast.TYPE_TRUTH_VALUE),
+    )
+    double_place = ast.SentenceNode(
+        word,
+        ast.Lambda(
+            "x",
+            ast.Lambda(
+                "y",
+                ast.Call(ast.Call(ast.Var(word.title()), ast.Var("x")), ast.Var("y")),
+            ),
+        ),
+        ast.ComplexType(
+            ast.TYPE_ENTITY, ast.ComplexType(ast.TYPE_ENTITY, ast.TYPE_TRUTH_VALUE)
+        ),
+    )
+    return [proper_noun, single_place, double_place]

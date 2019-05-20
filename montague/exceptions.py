@@ -1,7 +1,7 @@
 """Exception classes for the Montague package.
 
 Author:  Ian Fisher (iafisher@protonmail.com)
-Version: September 2018
+Version: May 2019
 """
 
 
@@ -15,7 +15,3 @@ class LexiconError(Exception):
 
 class ParseError(Exception):
     """When a formula or type could not be parsed."""
-
-
-class TranslationError(Exception):
-    """When an English sentence cannot be translated into logic."""

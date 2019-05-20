@@ -69,12 +69,15 @@ def execute_command(command, shell_state):
             return "Unrecognized command {}.".format(command)
     elif command:
         try:
-            entry = translate_sentence(command, shell_state.lexicon)
+            entries = translate_sentence(command, shell_state.lexicon)
         # TODO: Only catch montague errors
         except Exception as e:
             return "Error: {}".format(e)
         else:
-            return "Denotation: {0.formula}\nType: {0.type}".format(entry)
+            output = []
+            for entry in entries:
+                output.append("Denotation: {0.formula}\nType: {0.type}".format(entry))
+            return "\n\n".join(output)
 
 
 HELP_MESSAGE = """\

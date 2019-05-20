@@ -17,7 +17,6 @@ from montague.ast import (
 from montague.parser import parse_formula, parse_type
 from montague.translator import (
     LexiconError,
-    TranslationError,
     can_combine,
     combine,
     load_lexicon,
@@ -29,28 +28,45 @@ TYPE_ET = ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 
 def test_translate_is_good(lexicon):
-    node = translate_sentence("is good", lexicon)
+    # import pdb; pdb.set_trace()
+    nodes = translate_sentence("is good", lexicon)
+
+    assert len(nodes) == 1
+
+    node = nodes[0]
     assert node.text == "is good"
     assert node.formula == Lambda("x", Call(Var("Good"), Var("x")))
     assert node.type == TYPE_ET
 
 
 def test_translate_john_is_good(lexicon):
-    node = translate_sentence("John is good", lexicon)
+    nodes = translate_sentence("John is good", lexicon)
+
+    assert len(nodes) == 1
+
+    node = nodes[0]
     assert node.text == "John is good"
     assert node.formula == Call(Var("Good"), Var("john"))
     assert node.type == TYPE_TRUTH_VALUE
 
 
 def test_translate_john_is_bad(lexicon):
-    node = translate_sentence("John is bad", lexicon)
+    nodes = translate_sentence("John is bad", lexicon)
+
+    assert len(nodes) == 1
+
+    node = nodes[0]
     assert node.text == "John is bad"
     assert node.formula == Call(Var("Bad"), Var("john"))
     assert node.type == TYPE_TRUTH_VALUE
 
 
 def test_translate_every_child_is_good(lexicon):
-    node = translate_sentence("every child is good", lexicon)
+    nodes = translate_sentence("every child is good", lexicon)
+
+    assert len(nodes) == 1
+
+    node = nodes[0]
     assert node.text == "every child is good"
     assert node.formula == ForAll(
         "x", IfThen(Call(Var("Child"), Var("x")), Call(Var("Good"), Var("x")))
@@ -59,37 +75,49 @@ def test_translate_every_child_is_good(lexicon):
 
 
 def test_translate_the_child(lexicon):
-    node = translate_sentence("the child", lexicon)
+    nodes = translate_sentence("the child", lexicon)
+
+    assert len(nodes) == 1
+
+    node = nodes[0]
     assert node.text == "the child"
     assert node.formula == Iota("x", Call(Var("Child"), Var("x")))
     assert node.type == TYPE_ENTITY
 
 
-def test_translate_invalid_sentence(lexicon):
-    with pytest.raises(TranslationError):
-        translate_sentence("every John is good", lexicon)
-
-
 def test_translate_unknown_word(lexicon):
-    # Montague assumes that unknown words are single-place predicates.
-    node = translate_sentence("whorlious", lexicon)
-    assert node.text == "whorlious"
-    assert node.formula == Lambda("x", Call(Var("Whorlious"), Var("x")))
-    assert node.type == TYPE_ET
+    nodes = translate_sentence("Mikhail", lexicon)
 
+    assert len(nodes) == 3
 
-def test_translate_unknown_proper_noun(lexicon):
-    node = translate_sentence("Mikhail", lexicon)
-    assert node.text == "Mikhail"
-    assert node.formula == Var("mikhail")
-    assert node.type == TYPE_ENTITY
+    assert nodes[0].text == "Mikhail"
+    assert nodes[0].formula == Var("mikhail")
+    assert nodes[0].type == TYPE_ENTITY
+
+    assert nodes[1].text == "Mikhail"
+    assert nodes[1].formula == Lambda("x", Call(Var("Mikhail"), Var("x")))
+    assert nodes[1].type == TYPE_ET
+
+    assert nodes[2].text == "Mikhail"
+    assert nodes[2].formula == Lambda(
+        "x", Lambda("y", Call(Call(Var("Mikhail"), Var("x")), Var("y")))
+    )
+    assert nodes[2].type == ComplexType(TYPE_ENTITY, TYPE_ET)
 
 
 def test_translate_unknown_word_in_sentence(lexicon):
-    node = translate_sentence("John is whorlious", lexicon)
-    assert node.text == "John is whorlious"
-    assert node.formula == Call(Var("Whorlious"), Var("john"))
-    assert node.type == TYPE_TRUTH_VALUE
+    nodes = translate_sentence("John is whorlious", lexicon)
+
+    assert len(nodes) == 2
+
+    # TODO [2019-05-20]: For now, this is just wrong (but wrong in the expected way).
+    assert nodes[0].text == "John is whorlious"
+    assert nodes[0].formula == Call(Var("Whorlious"), Var("john"))
+    assert nodes[0].type == TYPE_TRUTH_VALUE
+
+    assert nodes[1].text == "John is whorlious"
+    assert nodes[1].formula == Call(Var("John"), Var("whorlious"))
+    assert nodes[1].type == TYPE_TRUTH_VALUE
 
 
 pred = SentenceNode("does", parse_formula("Lx.P(x)"), parse_type("<e, t>"))
@@ -105,8 +133,8 @@ def test_combine_to_saturate_predicate():
 
 
 def test_combine_every_child(lexicon):
-    every = lexicon["every"]
-    child = lexicon["child"]
+    every = lexicon["every"][0]
+    child = lexicon["child"][0]
     node = combine(every, child)
     assert node.text == "every child"
     assert node.formula == Call(every.formula, child.formula)
@@ -114,7 +142,7 @@ def test_combine_every_child(lexicon):
 
 
 def test_can_combine_is_good(lexicon):
-    assert can_combine(lexicon["is"], lexicon["good"])
+    assert can_combine(lexicon["is"][0], lexicon["good"][0])
 
 
 def test_cannot_combine_mismatched_types():
@@ -155,7 +183,7 @@ def test_simplify_super_nested_call():
 
 def test_simplify_every_child(lexicon):
     # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
-    tree = Call(lexicon["every"].formula, lexicon["child"].formula)
+    tree = Call(lexicon["every"][0].formula, lexicon["child"][0].formula)
     assert tree.simplify() == Lambda(
         "Q", ForAll("x", IfThen(Call(Var("Child"), Var("x")), Call(Var("Q"), Var("x"))))
     )
@@ -163,33 +191,33 @@ def test_simplify_every_child(lexicon):
 
 def test_load_lexicon():
     lexicon = load_lexicon(
-        {"John": {"d": "j", "t": "e"}, "good": {"d": "Lx.Good(x)", "t": "et"}}
+        {"John": [{"d": "j", "t": "e"}], "good": [{"d": "Lx.Good(x)", "t": "et"}]}
     )
     assert lexicon == {
-        "John": SentenceNode("John", parse_formula("j"), parse_type("e")),
-        "good": SentenceNode("good", parse_formula("Lx.Good(x)"), parse_type("et")),
+        "John": [SentenceNode("John", parse_formula("j"), parse_type("e"))],
+        "good": [SentenceNode("good", parse_formula("Lx.Good(x)"), parse_type("et"))],
     }
 
 
 def test_load_lexicon_missing_denotation_field():
     with pytest.raises(LexiconError) as e:
-        load_lexicon({"John": {"t": "e"}})
+        load_lexicon({"John": [{"t": "e"}]})
     assert "John" in str(e)
 
 
 def test_load_lexicon_with_missing_type_field():
     with pytest.raises(LexiconError) as e:
-        load_lexicon({"John": {"d": "j"}})
+        load_lexicon({"John": [{"d": "j"}]})
     assert "John" in str(e)
 
 
 def test_load_lexicon_with_invalid_denotation_formula():
     with pytest.raises(LexiconError) as e:
-        load_lexicon({"John": {"d": "???", "t": "e"}})
+        load_lexicon({"John": [{"d": "???", "t": "e"}]})
     assert "John" in str(e)
 
 
 def test_load_lexicon_with_invalid_type():
     with pytest.raises(LexiconError) as e:
-        load_lexicon({"John": {"d": "j", "t": "???"}})
+        load_lexicon({"John": [{"d": "j", "t": "???"}]})
     assert "John" in str(e)

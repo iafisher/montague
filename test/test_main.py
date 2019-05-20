@@ -63,9 +63,9 @@ def test_shell_switch_to_unrecognized_mode(shell_state):
 
 def test_shell_display_formula(shell_state):
     with patch("montague.main.translate_sentence") as mock_translate_sentence:
-        mock_translate_sentence.return_value = SentenceNode(
-            "good", Call(Var("Good"), Var("j")), TYPE_TRUTH_VALUE
-        )
+        mock_translate_sentence.return_value = [
+            SentenceNode("good", Call(Var("Good"), Var("j")), TYPE_TRUTH_VALUE)
+        ]
         response = execute_command("John is good", shell_state)
         assert "Denotation: Good(j)" in response
         assert "Type: t" in response
