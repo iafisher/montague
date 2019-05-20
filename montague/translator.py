@@ -62,12 +62,30 @@ def combine(term1, term2):
     is returned. If the types are not compatible, a CombinationError is raised.
     """
     if can_combine(term1, term2):
-        return ast.SentenceNode(
-            term1.text + " " + term2.text,
-            ast.Call(term1.formula, term2.formula),
-            term1.type.right,
-        )
+        if term1.type == term2.type:
+            # Modification
+            return ast.SentenceNode(
+                term1.text + " " + term2.text,
+                # TODO [2019-05-20]: Is it safe to introduce a new symbol like this?
+                ast.Lambda(
+                    "x",
+                    ast.And(
+                        ast.Call(term1.formula, ast.Var("x")),
+                        ast.Call(term2.formula, ast.Var("x")),
+                    ),
+                ),
+                term1.type,
+            )
+        else:
+            # Predication
+            return ast.SentenceNode(
+                term1.text + " " + term2.text,
+                ast.Call(term1.formula, term2.formula),
+                term1.type.right,
+            )
     elif can_combine(term2, term1):
+        # Don't need to handle the modification case here, because if it applied it
+        # would have triggered the first if clause.
         return ast.SentenceNode(
             # `text` should maintain linear order.
             term1.text + " " + term2.text,
@@ -78,9 +96,14 @@ def combine(term1, term2):
         raise CombinationError
 
 
+TYPE_ET = ast.ComplexType(ast.TYPE_ENTITY, ast.TYPE_TRUTH_VALUE)
+
+
 def can_combine(term1, term2):
     """Return True if the terms can be combined."""
-    return isinstance(term1.type, ast.ComplexType) and term1.type.left == term2.type
+    return (
+        isinstance(term1.type, ast.ComplexType) and term1.type.left == term2.type
+    ) or (term1.type == TYPE_ET and term2.type == TYPE_ET and term1.type == term2.type)
 
 
 def load_lexicon(lexicon_json):
