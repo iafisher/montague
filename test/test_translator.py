@@ -71,9 +71,18 @@ def test_translate_invalid_sentence(lexicon):
 
 
 def test_translate_unknown_word(lexicon):
-    with pytest.raises(TranslationError) as e:
-        translate_sentence("John is whorlious", lexicon)
-    assert "whorlious" in str(e)
+    # Montague assumes that unknown words are single-place predicates.
+    node = translate_sentence("whorlious", lexicon)
+    assert node.text == "whorlious"
+    assert node.formula == Lambda("x", Call(Var("Whorlious"), Var("x")))
+    assert node.type == TYPE_ET
+
+
+def test_translate_unknown_word_in_sentence(lexicon):
+    node = translate_sentence("John is whorlious", lexicon)
+    assert node.text == "John is whorlious"
+    assert node.formula == Call(Var("Whorlious"), Var("j"))
+    assert node.type == TYPE_TRUTH_VALUE
 
 
 pred = SentenceNode("does", parse_formula("Lx.P(x)"), parse_type("<e, t>"))

@@ -14,10 +14,7 @@ def translate_sentence(sentence, lexicon):
 
     If the sentence cannot be translated, a TranslationError is raised.
     """
-    try:
-        terms = [lexicon[word] for word in sentence.split()]
-    except KeyError as e:
-        raise TranslationError("Could not translate the word {}".format(e))
+    terms = [lexicon.get(word, default_for_unknown(word)) for word in sentence.split()]
 
     previous = len(terms)
     while len(terms) > 1:
@@ -97,3 +94,10 @@ def load_lexical_entry(key, value):
         raise LexiconError("could not parse type of {} ({})".format(key, e))
 
     return ast.SentenceNode(key, denotation, type_)
+
+
+def default_for_unknown(word):
+    """Provide a default definition for words that are not in the lexicon."""
+    formula = ast.Lambda("x", ast.Call(ast.Var(word.title()), ast.Var("x")))
+    type_et = ast.ComplexType(ast.TYPE_ENTITY, ast.TYPE_TRUTH_VALUE)
+    return ast.SentenceNode(word, formula, type_et)

@@ -26,5 +26,5 @@ $ montague
 As it is still in early beta, the Montague system has some limitations.
 
 - Montague has no knowledge of syntax. Its only criterion for grouping two phrases is whether they are linearly adjacent and whether their types are compatible. This leads Montague to interpret nonsense sentences like "Every good is child."
-- Montague will fail to interpret a sentence if it contains a word that is not in its lexicon.
+- Montague assumes all unknown words are single-place predicates.
 - Important modules of formal semantics, like plurality, tense, aspect, theta roles, intensionality, and indexicals, have yet to be implemented.
