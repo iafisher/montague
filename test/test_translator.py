@@ -28,54 +28,29 @@ from montague.translator import (
 TYPE_ET = ComplexType(TYPE_ENTITY, TYPE_TRUTH_VALUE)
 
 
-TEST_LEXICON = {
-    "bad": SentenceNode("bad", Lambda("x", Call(Var("Bad"), Var("x"))), TYPE_ET),
-    "is": SentenceNode("is", Lambda("P", Var("P")), ComplexType(TYPE_ET, TYPE_ET)),
-    "good": SentenceNode("good", Lambda("x", Call(Var("Good"), Var("x"))), TYPE_ET),
-    "every": SentenceNode(
-        "every",
-        Lambda(
-            "P",
-            Lambda(
-                "Q",
-                ForAll("x", IfThen(Call(Var("P"), Var("x")), Call(Var("Q"), Var("x")))),
-            ),
-        ),
-        ComplexType(TYPE_ET, ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)),
-    ),
-    "child": SentenceNode("child", Lambda("x", Call(Var("Child"), Var("x"))), TYPE_ET),
-    "John": SentenceNode("John", Var("j"), TYPE_ENTITY),
-    "the": SentenceNode(
-        "the",
-        Lambda("P", Iota("x", Call(Var("P"), Var("x")))),
-        ComplexType(TYPE_ET, TYPE_ENTITY),
-    ),
-}
-
-
-def test_translate_is_good():
-    node = translate_sentence("is good", TEST_LEXICON)
+def test_translate_is_good(lexicon):
+    node = translate_sentence("is good", lexicon)
     assert node.text == "is good"
     assert node.formula == Lambda("x", Call(Var("Good"), Var("x")))
     assert node.type == TYPE_ET
 
 
-def test_translate_john_is_good():
-    node = translate_sentence("John is good", TEST_LEXICON)
+def test_translate_john_is_good(lexicon):
+    node = translate_sentence("John is good", lexicon)
     assert node.text == "John is good"
     assert node.formula == Call(Var("Good"), Var("j"))
     assert node.type == TYPE_TRUTH_VALUE
 
 
-def test_translate_john_is_bad():
-    node = translate_sentence("John is bad", TEST_LEXICON)
+def test_translate_john_is_bad(lexicon):
+    node = translate_sentence("John is bad", lexicon)
     assert node.text == "John is bad"
     assert node.formula == Call(Var("Bad"), Var("j"))
     assert node.type == TYPE_TRUTH_VALUE
 
 
-def test_translate_every_child_is_good():
-    node = translate_sentence("every child is good", TEST_LEXICON)
+def test_translate_every_child_is_good(lexicon):
+    node = translate_sentence("every child is good", lexicon)
     assert node.text == "every child is good"
     assert node.formula == ForAll(
         "x", IfThen(Call(Var("Child"), Var("x")), Call(Var("Good"), Var("x")))
@@ -83,21 +58,21 @@ def test_translate_every_child_is_good():
     assert node.type == TYPE_TRUTH_VALUE
 
 
-def test_translate_the_child():
-    node = translate_sentence("the child", TEST_LEXICON)
+def test_translate_the_child(lexicon):
+    node = translate_sentence("the child", lexicon)
     assert node.text == "the child"
     assert node.formula == Iota("x", Call(Var("Child"), Var("x")))
     assert node.type == TYPE_ENTITY
 
 
-def test_translate_invalid_sentence():
+def test_translate_invalid_sentence(lexicon):
     with pytest.raises(TranslationError):
-        translate_sentence("every John is good", TEST_LEXICON)
+        translate_sentence("every John is good", lexicon)
 
 
-def test_translate_unknown_word():
+def test_translate_unknown_word(lexicon):
     with pytest.raises(TranslationError) as e:
-        translate_sentence("John is whorlious", TEST_LEXICON)
+        translate_sentence("John is whorlious", lexicon)
     assert "whorlious" in str(e)
 
 
@@ -113,17 +88,17 @@ def test_combine_to_saturate_predicate():
     assert node.type == TYPE_TRUTH_VALUE
 
 
-def test_combine_every_child():
-    every = TEST_LEXICON["every"]
-    child = TEST_LEXICON["child"]
+def test_combine_every_child(lexicon):
+    every = lexicon["every"]
+    child = lexicon["child"]
     node = combine(every, child)
     assert node.text == "every child"
     assert node.formula == Call(every.formula, child.formula)
     assert node.type == ComplexType(TYPE_ET, TYPE_TRUTH_VALUE)
 
 
-def test_can_combine_is_good():
-    assert can_combine(TEST_LEXICON["is"], TEST_LEXICON["good"])
+def test_can_combine_is_good(lexicon):
+    assert can_combine(lexicon["is"], lexicon["good"])
 
 
 def test_cannot_combine_mismatched_types():
@@ -162,9 +137,9 @@ def test_simplify_super_nested_call():
     assert tree.simplify() == And(Var("a"), Var("b"))
 
 
-def test_simplify_every_child():
+def test_simplify_every_child(lexicon):
     # (LP.LQ.Ax.P(x) -> Q(x))(Lx.Child(x)) -> LQ.Ax.Child(x) -> Q(x)
-    tree = Call(TEST_LEXICON["every"].formula, TEST_LEXICON["child"].formula)
+    tree = Call(lexicon["every"].formula, lexicon["child"].formula)
     assert tree.simplify() == Lambda(
         "Q", ForAll("x", IfThen(Call(Var("Child"), Var("x")), Call(Var("Q"), Var("x"))))
     )
