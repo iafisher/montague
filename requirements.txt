@@ -4,6 +4,6 @@ coverage==4.5.1
 lark-parser==0.6.4
 more-itertools==4.3.0
 pluggy==0.8.0
-py==1.7.0
+py==1.10.0
 pytest==4.0.0
 six==1.11.0
